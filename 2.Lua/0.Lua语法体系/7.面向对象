@@ -1,0 +1,45 @@
+#### : 操作符
+
+* 使用`:`定义表的函数字段时，Lua会将第一个参数隐藏，且在函数内部通过`self`访问。
+
+  ```lua
+  local tab = {}
+  
+  function tab:this()
+      return self
+  end
+  
+  print(tab == tab.this(tab))	-- true
+  ```
+
+* 使用`:`调用表的函数字段时，Lua将该表作为函数的第一个参数隐式传递。
+
+  ```lua
+  local tab = {}
+  
+  function tab.func(this)
+      print(this == tab)
+  end
+  
+  tab:func()	-- true
+  ```
+
+---
+
+#### 类
+
+* Lua可以通过设置`__index`，以类似原型的方式，实现类和对象的基本模型。
+
+  ```lua
+  local Class = {}
+  Class.__index = Class
+  function Class:call()
+      print(self)
+  end
+  
+  local obj = setmetatable({},Class)
+  obj:call()
+  ```
+
+  
+
