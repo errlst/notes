@@ -23,16 +23,3 @@
 使用`pryDown(src, dst, dsize, border_type)`向下取样。
 
 1. `dsize`，可选参数，默认向下取样到1/4。
-
----
-
-#### 尺寸缩放
-
-使用`cv::resize(src, dst, dsize, fx, fy, interpolation)`对图像进行缩放操作。
-
-1. `dsize`，缩放后的图像尺寸。
-2. `fx`，可选参数，缩放后的图像在x轴的缩放比率。
-3. `fy`，可选参数，缩放后的图像在y轴的缩放比率。
-4. `interpolation`，可选参数，缩放方式，命名规范为`INTER_[xxx]`，常用的有：
-   1. `INTER_NEAREST`，最近领插值，缩小图像时推荐使用。
-   2. `INTER_LINEAR`，双线性插值，放大图像时推荐使用。
