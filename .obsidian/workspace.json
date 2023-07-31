@@ -1,0 +1,158 @@
+{
+  "main": {
+    "id": "f21eb9e85e6a0a1a",
+    "type": "split",
+    "children": [
+      {
+        "id": "b3da69ca38f4ffa0",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a88a7c2266467a4c",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "1.Cpp/4.模板/5.类型萃取.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "e8b1067740e6c958",
+    "type": "split",
+    "children": [
+      {
+        "id": "97c3f0180077de39",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "1924d49a9deb33f2",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "55bfaed52ffe9cbf",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "88514b9bae987fee",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 200
+  },
+  "right": {
+    "id": "9c4efbb485f20ce4",
+    "type": "split",
+    "children": [
+      {
+        "id": "20596ce43d336b15",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c23ff7417f27cfb4",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "1.Cpp/4.模板/5.类型萃取.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "cd1d0cf4050a40a2",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "1.Cpp/4.模板/5.类型萃取.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "522013c96bbd520e",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "0438a45bb2aada26",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "1.Cpp/4.模板/5.类型萃取.md"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false
+    }
+  },
+  "active": "a88a7c2266467a4c",
+  "lastOpenFiles": [
+    "1.Cpp/4.模板/模板参数推导.md",
+    "1.Cpp/4.模板/0.basic.md",
+    "1.Cpp/4.模板/1.变参模板.md",
+    "1.Cpp/0.类型/3.字符串.md",
+    "1.Cpp/0.类型/1.类型转换.md",
+    "1.Cpp/0.类型/0.关键字.md"
+  ]
+}
