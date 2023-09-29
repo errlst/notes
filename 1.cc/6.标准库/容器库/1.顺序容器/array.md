@@ -25,9 +25,7 @@ struct array {
 
 [array]()满足元组接口。
 
-# 其它
-
-## 零长array尺寸
+## 零长尺寸
 
 libstdc++中，零长[array]()的尺寸为1字节。
 
