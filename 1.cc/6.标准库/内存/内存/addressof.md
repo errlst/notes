@@ -1,16 +1,17 @@
-[addressof(obj)]()获取对象的真实地址，即使存在[&]()重载。
+[toc]
 
-# 示例
+# addressof
+
+`std::addressof(o)`借助编译器内置函数，获取对象的真实地址，忽略`operator&`重载。
+
+## 实现
 
 ```cpp
-auto main() -> int {
-    struct {
-        auto operator&() { return nullptr; }
-    } t;
-    std::cout << (&t == nullptr) << "\n";                   // true
-    std::cout << (std::addressof(t) == nullptr) << "\n";    // false
-
-    return 0;
+template <typename T>
+constexpr auto addressof(T& t) noexcept -> T* {
+    return __buildin_addressof(t);
 }
 ```
+
+
 
