@@ -62,8 +62,3 @@ struct U{
 template<>
 enum U<int>::E{};
 ```
-
-
-
-
-
