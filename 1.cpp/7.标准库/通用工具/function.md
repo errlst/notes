@@ -75,7 +75,7 @@ class BindFront<Fn> {
 };
 
 template<typename Fn, typename ... BoundArgs>
-auto bind_front(Fn &&fn, BoundArgs &&... args) -> BindFront<Fn, BoundArgs...> {
+auto bind_front(Fn &&fn, BoundArgs &&... args) -> decltype(auto) {
     return BindFront<std::decay_t<Fn>, std::decay_t<BoundArgs>...>{
         std::forward<Fn>(fn), std::forward<BoundArgs>(args)...};
 }
