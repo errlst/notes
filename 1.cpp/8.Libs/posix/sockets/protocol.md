@@ -1,0 +1,51 @@
+#### User Datagram Protocol
+udp是简单的面向数据包的通讯协议。
+
+###### 通讯
+应用进程向udp套接字写入消息后，该消息被封装为一个udp数据报，而后被封装为一个IP数据报，发送到目的地。
+
+###### 可靠性
+udp缺乏可靠性，其不保证数据报一定会到达目的地、多个数据报之间被接受的先后顺序、一个数据报只会被接受一次等特性。
+
+###### 报文
+每个udp报文都包含整个报文的长度，整个报文的最大长度为65535字节。
+
+#### Transmission Control Protocol
+tcp是面向连接的、可靠的、基于字节流的通讯协议。
+
+###### 通讯
+tcp提供客户端与服务端之间的连接，连接成功后，进行数据交换，最后再断开连接。
+
+###### 可靠性
+tcp协议为每个字节关联一个序列号，对发送的数据进行排序，因此通过tcp传输的数据保证其发送的先后顺序和接受的先后顺序一致，且每个数据只会被接受一次。
+
+###### 握手
+建立tcp连接时，会进行以下操作（三次握手）：
+1. 服务端调用 `socket()`、`bind()` 和 `listen()`，被动打开。
+2. 客户端调用 `connect()` 发起主动打开。发送SYN包，通知服务端连接建立后发送数据的初始序列号。
+3. 服务端确认客户端发送的SYN包，并发送ACK确认以及自己的初始序列号。
+4. 客户端确认服务端发送的SYN包。
+```mermaid
+sequenceDiagram    
+participant client    
+participant server
+client ->> server: SYN J
+server ->> client: SYN K 、ACK J+1
+client ->> server: ACK K+1
+```
+
+###### 挥手
+断开tcp连接时，会进行以下操作（四次挥手）：
+1. A端进程调用 `close()`，进行主动关闭。发送FIN包。
+2. B接收到FIN后进行被动关闭，发送ACK确认关闭。
+3. 一段时间后，B端发送FIN包。
+4. A端发送ACK确认关闭。
+```mermaid
+sequenceDiagram
+participant A
+participant B
+A ->> B: FIN M
+B ->> A: ACK M+1
+B ->> A: FIN N
+A ->> B: ACK N+1
+```
