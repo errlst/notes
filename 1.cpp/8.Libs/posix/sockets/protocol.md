@@ -27,7 +27,7 @@ tcp协议为每个字节关联一个序列号，对发送的数据进行排序�
 4. 客户端确认服务端发送的SYN包。
 ```mermaid
 sequenceDiagram    
-participant client    
+participant client
 participant server
 client ->> server: SYN J
 server ->> client: SYN K 、ACK J+1
@@ -48,4 +48,19 @@ A ->> B: FIN M
 B ->> A: ACK M+1
 B ->> A: FIN N
 A ->> B: ACK N+1
-```
+``` 
+
+###### TCP状态
+* CLOSED：初始状态。
+* LISTEN：服务端处于监听状态。
+* SYN_RCVD：tcp握手时，服务端接受SYN报文后的中间状态，持续时间很短。
+* SYN_SEND，tcp握手时，客户端发送SYN报文后的中间状态，持续时间很短。
+* ESTABLISHED：连接已经建立。
+* FIN_WAIT_1：主动关闭连接，发送FIN报文后，持续时间很短。
+* FIN_WAIT_2：收到ACK回应后，此时对端还未关闭连接。
+* TIME_WAIT：接收到FIN报文，并发送ACK报文后，等待2MSL超时后回到CLOSED。(msl表示任何ip数据报可在网络中存活的最大时间)
+* CLOSE_WAIT：收到FIN报文。
+* LAST_ACK：发送FIN报文，并等待ACK。
+* CLOSING：两端几乎同时接收到FIN报文。即A发送FIN后，并未收到B的ACK，而是收到B的FIN。
+
+
