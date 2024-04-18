@@ -1,21 +1,3 @@
-模板无法将 `{}` 推断为 `initializer_list` 类型，可以传参时显示使用 `initializer_list<>{}` 或模板类型写为 `initializer_list<T>`。
-
-```cpp
-template <typename T>
-auto call_1(T &&) -> void {}
-
-template <typename T>
-auto call_2(std::initializer_list<T>) -> void {}
-
-auto main() -> int {
-    call_1({1, 2, 3});                       // error
-    call_1(std::initializer_list{1, 2, 3});  // error
-    call_1(std::initializer_list<int>{1, 2, 3});
-    call_2({1, 2, 3});
-
-    return 0;
-}
-```
 
 ---
 
