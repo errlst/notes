@@ -52,3 +52,24 @@ dest --> _[UIAbility End]
 
 ###### multition
 多实例模式，每次调用 `startAbility()` 时，都会新建一个 `UIAbility` 实例。
+
+###### specified
+指定实例模式，调用 `startAbility()` 时，指定一个字符串key，如果存在和该字符串key绑定的 `UIAbility` 实例，则复用该实例，否则创建新实例。
+
+#### 设置页面
+在 `onWindowStageCreate()` 中，会传入 `WindowStage` 对象，通过该对象的 `loadContent()` 方法可以设置当前 `UIAbility` 的页面。
+
+#### 获取上下文
+在 `UIAbilityt` 类内部，可以直接使用 `this.context` 获取当前实例绑定的上下文。
+
+在页面代码中，通过 `getContext(this) as common.UIAbilityContext` 获取实例绑定的上下文。
+
+#### 数据同步
+###### EventHub
+`EventHub` 提供 Ability 组件级别的事件机制，以 Ability 组件为中心提供了订阅、取消订阅和触发事件的能力，通常直接使用 `Context` 内部维护的 `EventHub` 对象，其基本使用流程为：
+1. 使用 `on()` 方法注册事件，需要提供事件名和回调函数。
+2. 使用 `emit()` 方法触发事件，提供事件名和传给回调的参数。
+3. 使用 `off()` 方法取消事件订阅。
+
+###### globalThis
+`globalThis` 是 ArkTS 引擎内部维护的一个实例对象，引擎内部的所有实例均可访问。
