@@ -6,10 +6,10 @@
 template<typename T, typename E>
 class expected {
     union {
-        T m_val;
-        E m_err;
+        T val_;
+        E err_;
     };
-    bool m_has_val;
+    bool has_val_;
 };
 ```
 
@@ -26,21 +26,35 @@ auto main() -> int {
 }
 ```
 
+#### 访问
 
+`.value()`，如果包含预期值，返回预期值；否则，抛出 `bad_expected_access` 异常，且其保有非预期值的副本。
 
+`.error()`，如果包含预期值，行为未定义；否则，返回非预期值。
 
+`.value_or(def_val)`，如果包含预期值，返回预期值；否则，返回 _def_val_。
 
+#### monadic
 
+`.and_then(f)`，如果包含期待值，返回 `f(value())`；否则，返回包含非预期值的副本的 `expected` 对象。且对 _f_ 的返回值类型 _R_，要么 _R_ 是 `expected` 的特化，要么 `same_as<R::error_type, E>`，否则非良构。
 
-## 访问
+`.transform(f)`，`.and_then` 的简化版本，会将 _f_ 的返回类型封装为 `expected`。
 
-使用[operator bool]()或[.has_value()]()判断当前是否存储期待值。
+```cpp
+auto main() -> int {
+    std::cout << std::expected<int, double>{10}.and_then([](int v) {
+                                                   return std::expected<int, double>{v * v};
+                                               }).value();
+    std::cout << std::expected<int, double>{10}.transform([](int v) {
+                                                   return v * v;
+                                               }).value();
+    return 0;
+}
+```
 
-使用[operator->]()或[operator*]()获取期待值的指针或引用。如果此时没有存储期待值，行为未定义。
+`.or_else(f)`，如果包含期待值，返回包含期待值的副本的 `expected` 对象，且对 _f_ 的返回值类型 _R_，要么 _R_ 是 `expected` 的特化，要么 `same_as<R::value_type, T>`，否则非良构。
 
-使用[.value()]()获取期待值，使用[.error]()返回非期待值。
-
-使用[.emplace(args...)]()原位构造期待值。
+`.transform_error(f)`，`.or_else` 的简化版本。
 
 
 
