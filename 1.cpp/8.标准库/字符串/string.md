@@ -1,32 +1,40 @@
-[toc]
-
-[basic_string<CharT, Traits, Alloc>]()是连续存放的字符序列容器。
+`basic_string<CharT, Traits, Alloc>` 连续存放的字符序列容器。对于短字符串，存在 SSO 优化。以下使用 `string` 指代 `basic_string`。
 
 ```cpp
-template <typename CharT,
-          typename Traits = std::char_traits<CharT>,
-          typename Alloc  = std::allocator<CharT>>
-class basic_string {
-    // 空基类优化，避免单独创建Alloc对象，占用不必要的空间
-    struct AllocHide : public Alloc {
-        CharT* m_ptr;
-    };
+// gcc 实现
+struct string {
+    auto is_large() -> bool { return ptr_ != buf_; }
+    auto data() -> char * { return ptr_; }
+    auto size() -> size_t { return size_; }
+    auto capacity() -> size_t { return cap_; }
 
-  private:
-    AllocHide m_data;
-    size_t    m_len;
+    char *ptr_;
+    size_t size_;
     union {
-        size_t m_capacity;
-        CharT  m_local_storage[15 / sizeof(CharT) + 1];  // 短字符串直接存放在静态内存中
+        size_t cap_;
+        char buf_[16];
     };
 };
 ```
 
-## 常量求值
+#### 常量求值
 
-[basic_string]()的成员函数是[constexpr]()的，因此可以在常量表达式中创建并使用[basic_string]()对象；但不能创建[constexpr]()的[basic_string]()对象，因为动态分配的存储必须在同一常量表达式中释放。[示例](#示例1)
+`basic_string` 的成员函数是 `constexpr` 的，因此可以在常量表达式中创建并使用 `string` 对象。
 
-## 成员函数
+但不能创建 `constexpr` 的 `string` 对象，因为动态分配的存储必须在同一常量表达式中释放。
+
+```cpp
+auto main() -> int {
+    constexpr auto i = std::string{"hello"}.size();	// ok
+    constexpr auto s = std::string{"hello"};  		// error
+
+    return 0;
+}
+```
+
+
+
+#### 成员函数
 
 ### 访问函数
 
