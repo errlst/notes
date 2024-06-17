@@ -42,3 +42,7 @@ auto main() -> int {
 }
 ```
 总结，`auto` 和模板推导的唯一区别：`auto` 会假定使用 `{}` 包裹的初始化器为 `initializer_list` 对象。
+
+#### auto(x) & auto{x}
+
+`auto(expr)` 或 `auto{expr}` 得到 _expr_ 的纯右值拷贝。

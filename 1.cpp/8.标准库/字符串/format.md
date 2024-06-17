@@ -73,3 +73,12 @@ int main() {
     return 0;
 }
 ```
+
+#### print
+
+print 函数簇是对 format 库的更简易使用。
+
+`print(fmt, args...)` 将格式化后的字符串输出到 _stdout_。
+
+`print(stream, fmt, args...)` 将格式化后的字符串输出到文件流。
+
