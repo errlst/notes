@@ -74,6 +74,8 @@ auto main(int argc, char *argv[]) -> int {
 
   断开到特定接受者的所有连接。
 
+`blockSignals(block)`，阻塞该对象发出的信号，但即使信号被阻塞，`destroy()` 信号也会发出。
+
 ###### 发送者
 
 如果槽是成员函数，可以通过 `sender()` 获取发送者。如果该对象与发送者在不同线程，该函数返回值无效。
@@ -140,7 +142,21 @@ auto main(int argc, char *argv[]) -> int {
 }
 ```
 
+#### 定时器
 
+###### 启动
 
+`QObject` 可以直接作为定时器使用，`startTimer(interval, type)` 注册定时器，成功返回定时器标识符，失败返回0。
 
+* _interval_，如果间隔为0，那么每当没有更多时间需要处理时，就产生一次定时器事件。
+
+* _type_，定时器精确度类型。
+
+###### 注册
+
+`killTimer(id)` 终止计时器。
+
+###### 接受
+
+计时器事件发送 `QTimerEvent`，默认会调用虚函数 `timerEvent(event)`。
 
