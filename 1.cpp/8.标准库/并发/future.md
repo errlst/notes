@@ -1,112 +1,58 @@
-## async
-`async([policy, ]f, args)`，异步运行可调用对象 _f_，并返回保佑调用结果的 `future` 对象。
+#### async
 
-#### 启动策略
-`launch::async`，异步求值，在新的线程上调用 _f_。
+`async(policy, f, args...)`，根据策略执行任务，并返回关联的 `future` 对象。
 
-`launch::deferred`，惰性求值，在返回的 `future` 对象上首次调用等待函数时，在当前线程中进行同步求值。当前线程和最初调用 `async()` 的线程不一定相同。
+###### 启动策略
+* `std::launch::async`，异步执行任务，如同在新线程中调用 `invoke(auto{forward<F>(f)}, auto{forward<Args>(args)}...)`。
 
-```cpp
-static auto main_id = std::this_thread::get_id();
+  > mscv 实现使用内部线程池；gcc 和 clang 使用 `std::thread` 新建线程。
 
-auto main() -> int {
-    std::async(std::launch::async,
-        [] {std::cout << (std::this_thread::get_id() == main_id) << "\n"; })
-        .wait();    // false
-    std::async(std::launch::deferred,
-        [] {std::cout << (std::this_thread::get_id() == main_id) << "\n"; })
-        .wait();    // true
-    return 0;
-}
-```
+* `std::launch::delay`，延迟执行任务，对返回结果首次求值时，在求值线程中同步执行任务。
 
-在不显示指定启动策略时，其策略为 `launch::async | launch::deferred`，即当无法利用更多并发性时，进行惰性调用。
+  ```cpp
+  auto main() -> int {
+      auto main_thread_id = std::this_thread::get_id();
+      auto fut = std::async(std::launch::deferred, [&] {
+          std::println("{}", main_thread_id == std::this_thread::get_id());
+      });
+      std::async(std::launch::async, [&] { fut.get(); }).get(); // false
+      return 0;
+  }
+  ```
 
-#### tips
-如果 `async()` 返回值被忽略，那么在表达式结尾，`future` 的析构函数会阻塞等待异步求值完成。
-```cpp
-auto main() -> int {
-    std::async([] {
-        std::this_thread::sleep_for(std::chrono::seconds{ 1 });
-        std::cout << "first step\n";
-        });                                 // 1
-    std::cout << "second step\n";           // 2
-    auto f = std::async([] {
-        std::this_thread::sleep_for(std::chrono::seconds{ 1 });
-        std::cout << "third step\n";        // 4
-        });
-    std::cout << "final step\n";            // 3
-    f.wait();
-    return 0;
-}
-```
+###### tips
+如果 `async()` 返回值被忽略，`future` 析构时会阻塞直到任务完成。
 
-且只有通过 `async()` 获取的 `future` 对象，在析构函数时才可能会阻塞。
+#### future
+`future<T>` 提供访问异步操作的结果或其抛出异常的机制。`future` 只对外提供了获取结果的接口，没有提供设置结果的接口。
 
-## future
-`future` 存储异步操作返回的结果，或抛出的异常。
+###### 访问
+`get()`，阻塞获取 `future` 存储的结果，或抛出异常。`future` 的结果只能获取一次，如果需要多次访问，使用 `shared_future`。
 
-#### 访问
-`future` 存放的内容只能被访问一次，如果需要多次访问，可使用 `shared_promise`。
+###### 析构
+如果 `future` 由 `async` 返回，且析构时状态未就绪，将阻塞直到状态就绪。
 
-`.get()`，阻塞获取 `future` 存储的结果，或抛出异常。
+#### promise
 
-#### 状态
-`.valid()`，检查当前是否还具有共享状态。对非共享的 `future` 进行修改或访问，都是未定义行为。
+`promise<T>` 提供设置异步操作或抛出异常的机制，之后创建关联的 `future` 对象访问结果。
 
-```cpp
-auto main() -> int {
-    auto pro = std::promise<int>{};
-    auto fut = pro.get_future();
-    std::cout << fut.valid() << "\n";  // true
-    pro.set_value(0);
-    std::cout << fut.valid() << "\n";  // true
-    fut.get();
-    std::cout << fut.valid() << "\n";  // false
-    return 0;
-}
-```
+###### 设置
 
-`.wait()`，等待结果可用。
+`set_value(val)`，设置结果为值，并使其处于就绪状态。
 
-#### 析构
-析构时，如果以下条件均为真，将阻塞：
-* 共享状态由 `async()` 创建。
-* 共享状态未就绪。
-* 当前对象是到其共享状态的唯一引用（对于 `future`，此条件永远为真）。
+`set_value_at_thread_exit(val)`，同上，但当线程结束后，再使其处于就绪状态。
 
-## promise
-`std::promise<T>`内部维护一个`future`，可以通过其访问`future`，也可以设置`future`的值。
+`set_exception(e_ptr)`，设置结果为异常，并使其处于就绪状态。
 
-## 获取结果
+`set_exception_at_thread_exit(e_ptr)`，同上，但当线程结束后，再使其处于就绪状态。
 
-`.get_future()`，返回其关联的`promise`对象。
+###### 访问
 
-## 设置结果
+`get_future()`，获取存储结果的 `future` 对象。
 
-`.set_value()`，设置`future`的值，并使其处于就绪状态。
 
-`.set_value_at_thread_exit()`，同上，但当线程退出后才使其处于就绪状态。
 
-`.set_exception()`，设置`future`为异常。
 
-`.set_exception_at_thread_exit()`，同上。
-
-# packaged_task
-
-`packaged_task<R, ...Args>`包装任何可调用对象，使其可以异步调用，并将其返回值或抛出的异常映射到其内部绑定的`future`上。
-
-## 执行
-
-`.operator(args...)`，执行包装的可调用对象。
-
-`.make_ready_at_thread_exit()`，确保只有当线程退出时，`future`才处于就绪状态。
-
-`.reset()`，重新构造`future`状态。
-
-## 结果
-
-`.get_future()`，获取关联的`future`对象。
 
 
 
