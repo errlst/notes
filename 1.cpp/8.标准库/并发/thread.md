@@ -1,79 +1,99 @@
-[toc]
 
-# thread
 
-构造==thread==对象后，线程将立即进入OS调度。绑定到线程对象的函数，其返回值将被忽略，但如果其抛出异常终止，将调用==terminate()==。
+#### thread
 
-## 析构
+###### 构造
 
-==thread==对象进行析构时，如果==.joinable() == true==，将调用==terminate()==。
+`thread(f, args...)`，创建 `thread` 对象并将其和执行线程关联，新的线程将立即进入os调度中，且执行`invoke(auto{std::forward<F>(f)}, auto{std::forward<Args>(args)}...)`。
 
-即销毁之前，必须显示调用==.detach()==分离线程，或调用==.join()==等待线程结束。
+```cpp
+struct T {
+    T() = default;
+    T(const T &) { std::println("const T&"); }
+    T(T &&) noexcept { std::println("T&&"); }
+};
 
-## 线程id
+auto main() -> int {
+    auto t = T{};
+    std::thread{[](T t) {}, t}.join();
+    // const T&     传递构造参数时会进行拷贝构造
+    // T&&          新线程执行时会进行移动构造
+    return 0;
+}
+```
 
-使用==.get_id()==获取当前线程对象的id。对于所有执行线程，其id唯一；对于所有非执行线程，其共享一个唯一的id。
+`auto` 求值产生的异常会在抛到当前线程，而不会开始新线程。执行线程的返回值会被忽略，且其抛出异常将直接调用 `terminate()`。
+
+###### 析构
+
+`thread` 对象销毁前，必须调用 `.detach()` 分离线程，或调用 `.join()` 等待线程结束，否则在析构时，如果 `.joinable() == true`，将调用 `terminate()`。
+
+###### id
+
+`.get_id()` 获取当前线程对象的 id。所有执行线程的 id 唯一，所有非执行线程共享一个 id。
 
 ```cpp
 auto main() -> int {
     auto t1 = std::thread{};
     auto t2 = std::thread{};
-    std::cout << (t1.get_id() == t2.get_id()) << "\n";  // true
-
+    std::println("{}", t1.get_id() == t2.get_id()); // true
     return 0;
 }
 ```
 
-# jthread
+---
 
-==jthread==在==thread==的基础上增加了，析构时自动join、处理停止请求，功能。
+#### this_thread
 
-## 构造
+`this_thread::yield()`，向内核提醒可以重新调度线程的执行。
 
-==jthread==的绑定函数，可接受==stop_token==作为第一个参数，其表示==jthread==对象的停止状态。
+`this_thread::get_id()`，获取当前线程 id。
+
+`this_thread::sleep_for(dur)`，休眠一段时间。
+
+`this_thread::sleep_until(point)`，休眠到某个点。
+
+---
+
+#### jthread
+
+`jthread` 的一般行为同 `thread` 一致，但其会在析构时自动合并，且可在特定情况下停止。
+
+###### 构造
+
+传递给 `jthread` 的执行函数，可额外接受 `stop_token` 作为第一个参数，其表示绑定对象的停止状态。
 
 ```cpp
 using namespace std::chrono_literals;
 auto main() -> int {
-    auto t = std::jthread{
-        [](std::stop_token tok) {
-            while (!tok.stop_requested()) {
-                std::cout << "work\n";
-                std::this_thread::sleep_for(1s);
-            }
-            std::cout << "finish\n";
-        }};
+    auto t = std::jthread{[](std::stop_token tok) {
+        while (!tok.stop_requested()) {
+            std::println("work");
+            std::this_thread::sleep_for(1s);
+        }
+        std::println("end");
+    }};
     std::this_thread::sleep_for(3s);
     t.request_stop();
     std::this_thread::sleep_for(3s);
-
     return 0;
-}  // work*3 + finished
+}
+/// 输出：work*3 + end
 ```
 
-## 停止信号
+###### 停止信号
 
-==.get_stop_source()==，获取关联的==stop_source==对象。
+`.get_stop_resource()`，获取关联的 `stop_source` 对象。
 
-==.get_stop_token()==，获取关联的==stop_token==对象。
+`.get_stop_token()`，获取关联的 `stop_token` 对象。
 
-==.request_top()==，向内部停止状态发送停止请求。
+`.request_top()`，发送停止请求。
 
-# this_thread
+---
 
-命名空间==this_thread==中定义了一些管理当前线程的函数。
+#### stop_token
 
-==yield()==，建议交出当前线程的时间片。
-
-==get_id()==，获取当前线程id。
-
-==sleep_for(duration)==，休眠一段时间。
-
-==sleep_until(point)==，休眠直到某个时间点。
-
-# stop_token
-
-==stop_token==维护一个停止状态，其可通过拷贝共享内部状态。
+`stop_token` 提供观察其内部停止状态的功能，可通过拷贝共享内部状态。通过 `stop_resource` 管理其内部关联的 `stop_token` 对象。
 
 ```cpp
 auto main() -> int {
@@ -82,14 +102,11 @@ auto main() -> int {
     std::cout << stop.stop_requested() << "\n";  // false
     source.request_stop();
     std::cout << stop.stop_requested() << "\n";  // true
-
     return 0;
 }
 ```
 
-==stop_token==只提供观察该停止状态的方法，并不提供修改此状态的方法。通常并不直接使用==stop_token==，而是通过==stop_source==管理其内部维护的==stop_token==对象。
-
-## 观察
+###### 观察
 
 ==.stop_requested()==，检查是否已经请求停止。
 
