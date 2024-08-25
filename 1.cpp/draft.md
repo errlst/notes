@@ -20,6 +20,7 @@ struct T {
     auto operator[](C c) {}
 };
 
+// wqd
 auto main() -> int {
     T {}[[]{}];  // error
     return 0;
