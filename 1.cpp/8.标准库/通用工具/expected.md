@@ -17,10 +17,13 @@ class expected {
 
 在初始化或赋值 `expected` 对象时，如果需要将其设置为非期待类型，需要使用 `unexpected<E>` 作为中间对象。
 
+或者使用 `std::unexpect` 作为第一个参数传递。
+
 ```cpp
 auto main() -> int {
     std::cout << std::expected<int, int>{0}.has_value() << "\n";                       // true
     std::cout << std::expected<int, int>{std::unexpected<int>{0}}.has_value() << "\n"; // false
+    std::cout << std::expected<int, int>{std::unexpect}.has_value() << "\n";		   // false
 
     return 0;
 }
