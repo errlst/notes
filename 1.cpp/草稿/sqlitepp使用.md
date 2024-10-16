@@ -37,7 +37,7 @@ cmd.execute();
 // 可以使用 binder() 顺序替换参数
 {
 	auto cmd = sqlite3pp::command{db, "select * from test where id = ?"};
-	cmd.binder() << 333;  
+	cmd.binder() << 333;
 }
 // 也可以使用 bind(idx, val) 指定绑定顺序，从 1 开始计数
 {
@@ -45,4 +45,3 @@ cmd.execute();
     cmd.bind(1, 333);
 }
 ```
-
