@@ -83,3 +83,15 @@ $ git branch -a
 # 将目标分支合并到当前分支
 $ git merge <分支名>
 ```
+
+#### 取消 commit
+
+`git reset --soft HEAD^`，撤回上次 commit，且不修改当前内容。
+
+`git reset --hard HEAD^`，撤回上次 commit，且修改当前内容。
+
+#### 切到指定 commit
+
+`git log`，查看提交历史，获取指定 commit 的哈希值。
+
+`git checkout <hash>` 切换到指定哈希的 commit。
