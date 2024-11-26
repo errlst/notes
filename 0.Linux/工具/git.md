@@ -44,45 +44,33 @@ WantedBy=multi-user.target
 
 ## 指令
 
-#### 分支
+#### 创建分支
 
-创建分支
+`git branch <branch>`
 
-```shell
-$ git branch <分支名>
-```
+#### 删除分支
 
-删除分支
+`git branch -d <branch>`
 
-```shell
-$ git branch -d <分支名>
-```
+#### 切换分支
 
-切换分支
+`git checkout <branch>`
 
-```shell
-$ git checkout <分支名>
-```
+#### 查看分支
 
-查看分支
+`git branch`，查看本地分支。
 
-```shell
-# 查看本地分支
-$ git branch
+`git branch -r`，查看远程分支。
 
-# 查看远程分支
-$ git branch -r
+`git branch -a`，查看所有分支。
 
-# 查看所有分支
-$ git branch -a
-```
+#### 合并分支
 
-合并分支
+`git merge <branch>`，将目标分支合并到当前分支。
 
-```shell
-# 将目标分支合并到当前分支
-$ git merge <分支名>
-```
+#### 取消合并
+
+`git merge --abort`，取消当前正在进行中的合并，并恢复到之前的状态。
 
 #### 取消 commit
 
@@ -95,3 +83,11 @@ $ git merge <分支名>
 `git log`，查看提交历史，获取指定 commit 的哈希值。
 
 `git checkout <hash>` 切换到指定哈希的 commit。
+
+#### 创建空白分支
+
+`git checkout --orphan <branch>`，创建没有任何提交记录的空白分支。
+
+如果合并空白分支，此时会报错 "拒绝合并无关分支"，此时加上 `--allow_unrelated_histories` 参数允许合并。
+
+> `git merge <branch> --allow_unrelated_histories`。
