@@ -47,13 +47,6 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions {
 opengl3.2 引入核心模式，通过 vao、vbo 等对象，一次将所有顶点发送到 gpu 中。
 
 ```cpp
-
-#include <QApplication>
-#include <QMatrix4x4>
-#include <QOpenGLExtraFunctions>
-#include <QOpenGLWidget>
-#include <iostream>
-
 class GLWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions {
   public:
     GLWidget() {
@@ -65,7 +58,7 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions {
   public:
     auto initializeGL() -> void override {
         initializeOpenGLFunctions();
-        glClearColor(0, 0, 0, 1);
+        glClearColor(255, 255, 255, 1);
         compileShader();
 
         auto vertics = std::vector<float>{};
@@ -87,10 +80,11 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions {
             vertics.emplace_back(1);
         }
 
+        // 将顶点信息写入显存
         glGenBuffers(1, &vbo_);
         glGenVertexArrays(1, &vao_);
         glBindVertexArray(vao_);
-        glBindBuffer(GL_ARRAY_BUFFER_BINDING, vbo_);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo_);
         glBufferData(GL_ARRAY_BUFFER, vertics.size() * sizeof(float),
                      vertics.data(), GL_STATIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
@@ -128,6 +122,7 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions {
         glCompileShader(f_shader);
         checkCompile(f_shader);
 
+        // 将 shader 链接为一个完整的管线
         program_ = glCreateProgram();
         glAttachShader(program_, v_shader);
         glAttachShader(program_, f_shader);
@@ -164,6 +159,7 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions {
     GLuint program_;
 
   private:
+    // 顶点着色器 shader
     inline static auto v_shader_s =
         R"(#version 330 core
         layout (location = 0) in vec3 pos;
@@ -172,19 +168,57 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions {
             gl_Position = ortho * vec4(pos.x, pos.y, pos.z, 1.0);
         })";
 
+    // 片段着色器 shader
     inline static auto f_shader_s =
         R"(#version 330 core
         out vec4 color;
         void main() {
-            color = vec4(1, 1, 1, 1);
+            color = vec4(1.f, .5f, .2f, 1.f);
         })";
 };
+```
 
-auto main(int argc, char *argv[]) -> int {
-    QApplication app{argc, argv};
-    GLWidget w;
-    w.show();
+## 渲染管线
 
-    return QApplication::exec();
+渲染管线的工作流程为：顶点数据(vertex data) -> 顶点着色器(vertex shader) -> 几何着色器(geometry shader) -> 图元装配(shape assembly) -> -> 光栅化(rasterization) -> 片段着色器(fragment shader) -> 测试混合。
+
+其中顶点着色器、几何着色器和片段着色器可以通过 glsl(opengl shading language) 控制。使用核心模式时，至少需要定义顶点着色器和片段着色器。
+
+#### 顶点着色器
+
+顶点着色器接受一个顶点数据，并对其进行一些基本处理。在着色器中通常进行坐标变换，使得坐标转换到标准设备坐标系中，标准设备坐标系的范围为 -1~1，任何落在范围外的坐标都会被抛弃。
+
+```c
+#version 330 core
+layout (location = 0) in vec3 pos;
+uniform mat4 ortho;
+void main() {
+    gl_Position = ortho * vec4(pos.x, pos.y, pos.z, 1.0);
 }
 ```
+
+- `layout (location = 0) in vec3 pos;`，定义输入变量。
+
+- `uniform mat4 ortho;`，定义可以和 cpu 程序交互数据的变量。
+
+- `gl_Position`，着色器输出变量。
+
+#### 几何着色器
+
+几何着色器接受一组顶点作为输入，并且能够通过产生新的顶点形成新的图元生成其他形状，并将新的图元输出到图元装配中。
+
+#### 图元装配
+
+图元装配将顶点着色器或几何着色器输出的顶点装配成指定的图元形状，如 `GL_LINE_LOOP` 为依次连接所有顶点。
+
+#### 光栅化
+
+opengl 中的所有事物都在 3D 空间中，光栅化负责将图元映射到屏幕上对应的像素，会拆切掉视图之外的所有像素，以提高执行效率。
+
+#### 片段着色器
+
+片段着色器计算像素输出的最终颜色。
+
+#### 混合测试
+
+混合测试会测试片段对应的深度，判断该像素是否需要丢弃。同时也会检查 alpha 值，并进行 alpha 混合。
