@@ -16,7 +16,7 @@
 
 - `GL_CLAMP_TO_BORDER`，超出颜色为指定边缘颜色。
 
-![alt 纹理环绕示例](https://learnopengl-cn.github.io/img/01/06/texture_wrapping.png)
+![纹理环绕示例](https://learnopengl-cn.github.io/img/01/06/texture_wrapping.png)
 
 纹理环绕方式通过 `glTexParameterr*` 函数簇对每一个轴单独设置：
 
@@ -49,7 +49,7 @@ glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color.data());
 
 将低分辨率纹理映射到大物体上时，如果选择 `GL_NEAREST`，会得到带颗粒状的图案，如果选择 `GL_LINEAR`，则会得到更模糊但平滑的图案。
 
-![alt 邻近过滤和线性过滤比较](https://learnopengl-cn.github.io/img/01/06/texture_filtering.png)
+![邻近过滤和线性过滤比较](https://learnopengl-cn.github.io/img/01/06/texture_filtering.png)
 
 通过 `glTexParameter*` 函数簇分别设置放大缩小时的纹理过滤方式。
 
@@ -86,6 +86,36 @@ glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 ## 加载和创建纹理
 
 需要将纹理图像进行解码，然后才能传递给 opengl 使用。
+
+- `glGenTextures()`，创建纹理对象。
+
+- `glBindTexture()`，绑定纹理对象。
+
+- `glTexImage2D(target, level, i_format, w, h, border, format, type, data)`，2D 纹理操作。
+
+  - `target`，操作。通常为 `GL_TEXTURE_2D`，表示定义一个 2D 纹理。
+
+  - `level`，指定 LOD 等级，基本等级为 0。
+
+  - `i_format`，指定纹理内部格式。
+
+  - `w`、`h`，宽高。
+
+  - `border`，遗留问题，必须是 0。
+
+  - `format`，传入数据的格式。
+
+  - `type`、`data`，单个数据类型和数据指针。
+
+glsl 内置了一个提供给纹理对象使用的数据类型，称为采样器，其以纹理类型作为后缀，如 `sampler1D`、`sampler2D`。使用内置函数 `texture()` 采样纹理颜色，第一个参数是采样器，第二个参数是对应的纹理坐标，输出的是颜色。
+
+#### 纹理单元
+
+采样器变量通过 `uniform` 声明，一个采样器变量实际上引用一个纹理单元，默认情况下采样器变量对应的是纹理单元 0。因此，如果只需要一个纹理时，可以不需要通过 `glUniform1i()` 为其赋值。
+
+在绑定纹理对象之前，通常还需要通过 `glActiveTexture()` 激活对应的纹理单元，默认会激活纹理单元 0。opengl 保证至少由 16 个纹理单元可以使用，从 `GL_TEXTURE0` 到 `GL_TEXTURE15`。
+
+#### 示例
 
 ```cpp
 class GLWidget : public QOpenGLWindow, protected QOpenGLExtraFunctions {
