@@ -69,3 +69,159 @@ glEnable(GL_DEPTH_TEST);
 ```cpp
 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 ```
+
+## 示例
+
+```cpp
+class GLWidget : public QOpenGLWindow, protected QOpenGLExtraFunctions {
+public:
+  auto initializeGL() -> void override {
+    initializeOpenGLFunctions();
+    glClearColor(1, 1, 1, 1);
+    compile_shader();
+    glUseProgram(pro_);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    // 12个三角形
+    auto vertices = std::array{
+        -0.5f, -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  0.5f,  -0.5f,
+        0.5f,  0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, -0.5f, -0.5f, //
+
+        -0.5f, -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  0.5f,  0.5f,
+        0.5f,  0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, -0.5f, 0.5f, //
+
+        -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f, -0.5f, -0.5f, -0.5f,
+        -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f, //
+
+        0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f, -0.5f,
+        0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f,  0.5f,  0.5f, //
+
+        -0.5f, -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, 0.5f,
+        0.5f,  -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, -0.5f, //
+
+        -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  0.5f,
+        0.5f,  0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f, //
+    };
+
+    glGenVertexArrays(1, &vao_);
+    glBindVertexArray(vao_);
+
+    auto vbo = GLuint{};
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+  }
+
+  auto paintGL() -> void override {
+    glClear(GL_COLOR_BUFFER_BIT);
+    glBindVertexArray(vao_);
+
+    auto model = QMatrix4x4{};
+    model.rotate(angle_x_, {1, 0, 0});
+    model.rotate(angle_y_, {0, 1, 0});
+    auto view = QMatrix4x4{};
+    view.translate(0, 0, -3);
+    auto proj = QMatrix4x4{};
+    proj.perspective(45, 1.0f * width() / height(), 0.1f, 100.0f);
+    glUniformMatrix4fv(glGetUniformLocation(pro_, "model"), 1, GL_FALSE, model.data());
+    glUniformMatrix4fv(glGetUniformLocation(pro_, "view"), 1, GL_FALSE, view.data());
+    glUniformMatrix4fv(glGetUniformLocation(pro_, "proj"), 1, GL_FALSE, proj.data());
+
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+  }
+
+  auto resizeGL(int w, int h) -> void override { glViewport(0, 0, w, h); }
+
+  auto compile_shader() -> void {
+    auto v_shader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(v_shader, 1, &v_shader_s, nullptr);
+    glCompileShader(v_shader);
+    check_compile(v_shader);
+
+    auto f_shader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(f_shader, 1, &f_shader_s, nullptr);
+    glCompileShader(f_shader);
+    check_compile(f_shader);
+
+    pro_ = glCreateProgram();
+    glAttachShader(pro_, v_shader);
+    glAttachShader(pro_, f_shader);
+    glLinkProgram(pro_);
+    check_link(pro_);
+
+    glDeleteShader(v_shader);
+    glDeleteShader(f_shader);
+  }
+
+  auto check_compile(GLuint shader) -> void {
+    auto suc = 0;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &suc);
+    if (!suc) {
+      char buf[1024];
+      glGetShaderInfoLog(shader, sizeof(buf), nullptr, buf);
+      std::println("compile failed: {}", buf);
+    }
+  }
+
+  auto check_link(GLuint program) -> void {
+    auto suc = 0;
+    glGetProgramiv(program, GL_LINK_STATUS, &suc);
+    if (!suc) {
+      char buf[1024];
+      glGetProgramInfoLog(program, sizeof(buf), nullptr, buf);
+      std::println("link failed: {}", buf);
+    }
+  }
+
+protected:
+  auto mousePressEvent(QMouseEvent *event) -> void override {
+    if (event->button() == Qt::LeftButton) {
+      last_pos_ = event->pos();
+    }
+  }
+
+  auto mouseMoveEvent(QMouseEvent *event) -> void override {
+    if (event->buttons() & Qt::LeftButton) {
+      auto dx = event->position().x() - last_pos_.x();
+      auto dy = event->position().y() - last_pos_.y();
+      angle_x_ += dy;
+      angle_y_ += dx;
+      last_pos_ = event->pos();
+      update();
+    }
+  }
+
+private:
+  GLuint vao_;
+  GLuint pro_;
+  QPoint last_pos_;
+  float angle_x_;
+  float angle_y_;
+
+private:
+  inline static auto v_shader_s = R"(#version 330 core
+    layout (location=0) in vec3 pos;
+
+    uniform mat4 model;
+    uniform mat4 view;
+    uniform mat4 proj;
+
+    void main(){
+      gl_Position = proj * view * model * vec4(pos, 1.0);
+    })";
+
+  inline static auto f_shader_s = R"(#version 330 core
+    out vec4 color;
+
+    void main(){
+      color = vec4(1.0, 0.0, 0.0, 1.0);
+    })";
+};
+```
