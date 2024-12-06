@@ -19,6 +19,9 @@ auto main() -> int {
     }
     return 0;
 }
-// 输出：23
 ```
 
+> ```shell
+> 2
+> 3
+> ```

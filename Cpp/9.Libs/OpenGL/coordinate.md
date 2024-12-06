@@ -46,7 +46,7 @@ auto mat = QMatrix4x4{};
 mat.perspective(fov, ratio, near, far);
 ```
 
-- fov，视野的垂直可见范围。
+- fov，视野的垂直可见范围，角度单位。
 
 - ratio，输出的宽高比。
 
