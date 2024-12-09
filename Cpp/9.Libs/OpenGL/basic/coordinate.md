@@ -64,6 +64,8 @@ OpenGL 的深度信息存放在 z 缓冲中，也称为深度缓冲。当开启�
 glEnable(GL_DEPTH_TEST);
 ```
 
+同时，需要保证窗口管理器的深度缓冲区大小有效。该大小表示缓冲区每个数据的比特数量。通常设置 24 位。
+
 开启深度测试后，每次渲染之前还需要清空深度缓冲区。
 
 ```cpp
@@ -78,29 +80,54 @@ public:
   auto initializeGL() -> void override {
     initializeOpenGLFunctions();
     glClearColor(1, 1, 1, 1);
+    glEnable(GL_DEPTH_TEST);
+
     compile_shader();
     glUseProgram(pro_);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // 12个三角形
     auto vertices = std::array{
-        -0.5f, -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  0.5f,  -0.5f,
-        0.5f,  0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, -0.5f, -0.5f, //
+        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, //
+        0.5f,  -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, //
+        0.5f,  0.5f,  -0.5f, 1.0f, 0.0f, 0.0f, //
+        0.5f,  0.5f,  -0.5f, 1.0f, 0.0f, 0.0f, //
+        -0.5f, 0.5f,  -0.5f, 1.0f, 0.0f, 0.0f, //
+        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, //
 
-        -0.5f, -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  0.5f,  0.5f,
-        0.5f,  0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, -0.5f, 0.5f, //
+        -0.5f, -0.5f, 0.5f,  0.0f, 1.0f, 0.0f, //
+        0.5f,  -0.5f, 0.5f,  0.0f, 1.0f, 0.0f, //
+        0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f, //
+        0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f, //
+        -0.5f, 0.5f,  0.5f,  0.0f, 1.0f, 0.0f, //
+        -0.5f, -0.5f, 0.5f,  0.0f, 1.0f, 0.0f, //
 
-        -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f, -0.5f, -0.5f, -0.5f,
-        -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f, //
+        -0.5f, 0.5f,  0.5f,  0.0f, 0.0f, 1.0f, //
+        -0.5f, 0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, //
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, //
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, //
+        -0.5f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f, //
+        -0.5f, 0.5f,  0.5f,  0.0f, 0.0f, 1.0f, //
 
-        0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f, -0.5f,
-        0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f,  0.5f,  0.5f, //
+        0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f, //
+        0.5f,  0.5f,  -0.5f, 1.0f, 1.0f, 0.0f, //
+        0.5f,  -0.5f, -0.5f, 1.0f, 1.0f, 0.0f, //
+        0.5f,  -0.5f, -0.5f, 1.0f, 1.0f, 0.0f, //
+        0.5f,  -0.5f, 0.5f,  1.0f, 1.0f, 0.0f, //
+        0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f, //
 
-        -0.5f, -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, 0.5f,
-        0.5f,  -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, -0.5f, //
+        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, //
+        0.5f,  -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, //
+        0.5f,  -0.5f, 0.5f,  1.0f, 0.0f, 1.0f, //
+        0.5f,  -0.5f, 0.5f,  1.0f, 0.0f, 1.0f, //
+        -0.5f, -0.5f, 0.5f,  1.0f, 0.0f, 1.0f, //
+        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, //
 
-        -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  0.5f,
-        0.5f,  0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f, //
+        -0.5f, 0.5f,  -0.5f, 0.0f, 1.0f, 1.0f, //
+        0.5f,  0.5f,  -0.5f, 0.0f, 1.0f, 1.0f, //
+        0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 1.0f, //
+        0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 1.0f, //
+        -0.5f, 0.5f,  0.5f,  0.0f, 1.0f, 1.0f, //
+        -0.5f, 0.5f,  -0.5f, 0.0f, 1.0f, 1.0f, //
     };
 
     glGenVertexArrays(1, &vao_);
@@ -111,21 +138,26 @@ public:
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   }
 
   auto paintGL() -> void override {
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glUseProgram(pro_);
     glBindVertexArray(vao_);
 
     auto model = QMatrix4x4{};
-    model.rotate(angle_x_, {1, 0, 0});
-    model.rotate(angle_y_, {0, 1, 0});
+    // model.rotate(angle_x_, {1, 0, 0});
+    model.rotate(angle_x_, 1, 0, 0);
+    // model.rotate(angle_y_, {0, 1, 0});
+    model.rotate(angle_y_, 0, 1, 0);
+
     auto view = QMatrix4x4{};
     view.translate(0, 0, -3);
     auto proj = QMatrix4x4{};
@@ -208,6 +240,9 @@ private:
 private:
   inline static auto v_shader_s = R"(#version 330 core
     layout (location=0) in vec3 pos;
+    layout (location=1) in vec3 color;
+
+    out vec3 v_color;
 
     uniform mat4 model;
     uniform mat4 view;
@@ -215,13 +250,26 @@ private:
 
     void main(){
       gl_Position = proj * view * model * vec4(pos, 1.0);
+      v_color = color;
     })";
 
   inline static auto f_shader_s = R"(#version 330 core
-    out vec4 color;
+    in vec3 v_color;
+    out vec4 f_color;
 
     void main(){
-      color = vec4(1.0, 0.0, 0.0, 1.0);
+      f_color = vec4(v_color, 1.0);
     })";
 };
+
+auto main(int argc, char *argv[]) -> int {
+  auto app = QApplication{argc, argv};
+  auto format = QSurfaceFormat{};
+  format.setDepthBufferSize(24);  // 深度缓冲区大小 !!
+  format.setVersion(3, 3);
+  QSurfaceFormat::setDefaultFormat(format);
+  auto w = GLWidget{};
+  w.show();
+  return QApplication::exec();
+}
 ```
