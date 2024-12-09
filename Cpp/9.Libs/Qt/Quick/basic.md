@@ -52,11 +52,12 @@ set(CMAKE_PREFIX_PATH "/home/jsr/Qt/6.8.1/gcc_64/lib/cmake")
 find_package(Qt6 REQUIRED COMPONENTS Core Quick QuickControls2)
 
 target_link_libraries(exec PRIVATE Qt6::Core Qt6::Quick Qt6::QuickControls2)
+
 ```
 
 # 模块
 
-从 Qt6.2 开始，导入模块时可以不指定版本，自动选择最新版本。
+使用 `import module_name version` 导入模块。从 Qt6.2 开始，导入模块时可以不指定版本，自动选择最新版本。
 
 Qt 提供以下标准模块：
 
