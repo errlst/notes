@@ -75,6 +75,8 @@ Qt 提供以下标准模块：
 
 - QtQuick.Shapes。基本图形绘制。
 
+- QtQuick.LocalStorage。SQLite 数据库接口。
+
 - QtGraphicalEffects。高级图形效果，如模糊、阴影等。
 
 - QtMultimedia。多媒体处理。
@@ -83,4 +85,22 @@ Qt 提供以下标准模块：
 
 - QtLocation。地图和位置服务。
 
-- QtWebEngine。渲染网页。
+# 工具
+
+qmllint，验证 QML 文件语法的有效性。
+
+qmlformat，QML 格式化工具。
+
+qmlls，QML LSP。
+
+qmlprofiler，QML 调试工具。
+
+qml，快速加载 QML 文档。
+
+qmlpreview，预览 QML，并实时观测 QML 文档的变化并重新加载。
+
+> qmlpreview 并非直接加载 QML 文档，而是执行加载 QML 文档的程序，可以结合 qml 实现实时预览 QML 文档。
+>
+> ```shell
+> qmlpreview qml target.qml
+> ```
