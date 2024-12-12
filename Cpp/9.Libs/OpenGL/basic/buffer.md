@@ -21,7 +21,7 @@ glBufferData(GL_ARRAY_BUFFER, sizeof(vertics), vertics, GL_STATIC_DRAW);
 
   - `GL_STREAM_DRAW`，数据每次绘制都会变化。
 
-  > DRAW 表示这些数据用于绘制。
+    > DRAW 表示这些数据用于绘制。
 
 ## 顶点属性
 

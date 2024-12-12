@@ -1,6 +1,6 @@
 一个摄像机由以下几个向量构成：世界空间中的坐标、观察的方向、指向相机右侧的向量和指向相机上方的向量。即一个以相机为原点的坐标系。
 
-## 相机方向
+# 相机方向
 
 按照惯例，相机右侧作为 +x 轴、相机上方作为 +y 轴，相机看向的方向作为 -z 轴。
 
@@ -12,7 +12,7 @@ auto camera_target = QVector3D{0, 0, 0};
 auto camera_direction = (camera_pos - camera_target).normalized();
 ```
 
-## 上轴和右轴
+# 上轴和右轴
 
 通常直接定义 +y 轴，然后通过向量叉乘计算 +x 轴。
 
@@ -21,7 +21,7 @@ auto camera_up = QVector3D{0, 1, 0};
 auto camera_right = QVector3D::crossProduct(camera_up, camera_direct);
 ```
 
-## LookAt
+# LookAt
 
 LookAt 矩阵可以将世界坐标转换到已经定义好的观察坐标中。LookAt 矩阵会创建一个看向目标的观察矩阵。
 
@@ -53,7 +53,89 @@ $$
 
 其中 $R$、$U$、$D$ 分别是右向量、上向量和方向向量，$P$ 是相机位置向量。
 
-## 示例
+# 相机类的简单实现
+
+```cpp
+struct CameraDirection {
+  int front; // 正前负后
+  int right; // 正右负左
+};
+
+struct Camera {
+public:
+  Camera() { update_vecs(); }
+
+  // 视图矩阵
+  auto view_matrix() -> QMatrix4x4 {
+    auto res = QMatrix4x4{};
+    res.lookAt(position_, position_ + front_, up_);
+    return res;
+  }
+
+  // 移动
+  auto move(CameraDirection dir, float delta_time) {
+    float distance = speed_ * delta_time;
+    position_ += front_ * dir.front * distance;
+    position_ += right_ * dir.right * distance;
+  }
+
+  // 旋转
+  auto rotate(float x_offset, float y_offset) {
+    x_offset *= sensitivity_;
+    y_offset *= sensitivity_;
+
+    yaw_ += x_offset;
+    pitch_ += y_offset;
+
+    // 约束偏航角，使其在 [-180, 180] 之间
+    if (pitch_ > 89.0f) {
+      pitch_ = 89.0f;
+    }
+    if (pitch_ < -89.0f) {
+      pitch_ = -89.0f;
+    }
+
+    update_vecs();
+  }
+
+  // 缩放
+  auto zoom(float off) {
+    zoom_ -= off;
+    if (zoom_ <= 1.0f) {
+      zoom_ = 1.0f;
+    }
+    if (zoom_ >= 45.0f) {
+      zoom_ = 45.0f;
+    }
+  }
+
+private:
+  // 计算相机的前向量、右向量和上向量
+  auto update_vecs() -> void {
+    front_.setX(cos(qDegreesToRadians(yaw_)) * cos(qDegreesToRadians(pitch_)));
+    front_.setY(sin(qDegreesToRadians(pitch_)));
+    front_.setZ(sin(qDegreesToRadians(yaw_)) * cos(qDegreesToRadians(pitch_)));
+    front_.normalize();
+    right_ = QVector3D::crossProduct(front_, QVector3D(0, 1, 0)).normalized();
+    up_ = QVector3D::crossProduct(right_, front_).normalized();
+  }
+
+public:
+  QVector3D position_{}; // 位置
+  QVector3D front_{};    // 前向量
+  QVector3D up_{};       // 上向量
+  QVector3D right_{};    // 右向量
+
+  float yaw_{-90.0f}; // 偏航角
+  float pitch_{0.0f}; // 俯仰角
+
+  float speed_{2.5f};       // 移动速度
+  float sensitivity_{0.1f}; // 旋转零敏度
+  float zoom_{45.0f};       // 缩放值
+};
+```
+
+# 示例
 
 ```cpp
 class GLWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions {
