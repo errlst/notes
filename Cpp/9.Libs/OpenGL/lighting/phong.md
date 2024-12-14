@@ -1,24 +1,34 @@
-- [风氏光照模型](#风氏光照模型)
+- [Phong Lighting Model](#phong-lighting-model)
   - [环境光照](#环境光照)
   - [漫反射光照](#漫反射光照)
-    - [计算法向量](#计算法向量)
   - [镜面反射](#镜面反射)
 - [Gouraud Shading](#gouraud-shading)
 - [示例](#示例)
 
-# 风氏光照模型
+# Phong Lighting Model
 
-Phong Lighting Model 由三个分量组成：
+风氏光照模型由三个分量组成：
 
-- 环境光照（Ambient Lighting）：即使在黑暗环境下，通常也存在一些自然光，因此使用一个环境光照常量，它永远会给物体一些颜色。只与环境光颜色有关。
+- 环境光照（Ambient Lighting）：即使在黑暗环境下，通常也存在一些自然光，因此使用一个环境光照常量，它永远会给物体一些颜色。
 
-- 漫反射光照（Diffuse Lighting）：模拟光源对物体方向性的影响，即物体的某一部分越正对光源，其就越亮。与光源颜色和表面颜色有关。
+- 漫反射光照（Diffuse Lighting）：模拟光源对物体方向性的影响，即物体的某一部分越正对光源，其就越亮。
 
-- 镜面光照（Specular Lighting）：模拟光泽物体上面出现的亮点，镜面光照的颜色更倾向于光的颜色。只与光源颜色有关。
+- 镜面光照（Specular Lighting）：模拟光泽物体上面出现的亮点。
 
-![三种光照演示](https://learnopengl-cn.github.io/img/02/02/basic_lighting_phong.png)
+  ![三种光照演示](https://learnopengl-cn.github.io/img/02/02/basic_lighting_phong.png)
 
-最终表面颜色的计算公式为：
+因此风氏光照模型中，物体表面材质由以下四个属性描述：
+
+```glsl
+struct Material {
+  vec3 ambient;   // 表面的环境光反射率
+  vec3 diffuse;   // 表面的漫反射率
+  vec3 specular;  // 表面的镜面反射率
+  float shininess;// 表面的高光系数
+};
+```
+
+表面颜色的计算公式为：
 
 $$
 I = I_a + I_d + I_s
@@ -34,13 +44,12 @@ $$
 > I_a = k_a \cdot L_a
 > $$
 >
-> $k_a$：环境光强度。
+> $k_a$：表面的环境光反射率。
 >
 > $L_a$：环境光颜色。
 
 ```glsl
-float ambient_strength = 0.1;
-vec3 ambient = ambient_strength * vec3(1, 1, 1);
+vec3 amb = light * material.ambient;
 ```
 
 ## 漫反射光照
@@ -48,6 +57,8 @@ vec3 ambient = ambient_strength * vec3(1, 1, 1);
 漫反射的计算基本单位为物体的面，计算漫反射光照需要：
 
 - 法向量：垂直顶点表面的向量。
+
+  > 顶点本身并没有表面，因此通常利用其周围的点来计算出该顶点的法向量。
 
 - 定向的光线：光源位和片段位置向量差的方向向量。
 
@@ -59,7 +70,7 @@ $$
 I_d = k_d \cdot L_d \cdot max(0, \vec{N} \cdot \vec{L})
 $$
 
-> $k_d$：物体对颜色的反射能力。如 (0.1, 0.2, 0.3) 表示表面对红光的反色率为 0.1、对绿光的反色率为 0.2，对蓝光的反色率为 0.3。
+> $k_d$：表面的漫反射率。
 >
 > $L_d$：光源颜色。
 >
@@ -70,12 +81,8 @@ $$
 ```glsl
 vec3 norm = normalize(f_normal);
 vec3 light_dir = normalize(light_pos - f_pos);
-vec3 diffuse = cube_color * light_color * max(0, dot(norm, light_dir));
+vec3 diff = light * material.diffuse * max(0, dot(norm, light_dir));
 ```
-
-### 计算法向量
-
-顶点本身并没有表面，因此通常利用其周围的点来计算出该顶点的法向量。
 
 ## 镜面反射
 
@@ -93,7 +100,7 @@ $$
 I_s = k_s \cdot L_s \cdot max(0, \vec{R} \cdot \vec{V})^n
 $$
 
-> $k_s$：镜面反射系数。
+> $k_s$：表面的镜面反射率。
 >
 > $L_s$：镜面光颜色。
 >
@@ -104,11 +111,9 @@ $$
 > $n$：高光系数，值越大，光斑越集中。
 
 ```glsl
-float specular_strength = 0.5;
-int shininess = 32;
 vec3 reflect_dir = reflect(-light_dir, norm);
 vec3 view_dir = normalize(view_pos - f_pos);
-vec3 specular = specular_strength * light_color * pow(max(dot(reflect_dir, view_dir), 0), shininess);
+vec3 spec = light * material.specular * pow(max(dot(reflect_dir, view_dir), 0), material.shininess);
 ```
 
 # Gouraud Shading
@@ -151,29 +156,33 @@ in vec3 f_normal;
 
 out vec4 color;
 
-uniform vec3 cube_color;  // 物体颜色
-uniform vec3 light_color; // 光源颜色
-uniform vec3 light_pos;   // 光源坐标
-uniform vec3 view_pos;    // 相机坐标
+uniform vec3 light;     // 光源颜色
+uniform vec3 light_pos; // 光源坐标
+uniform vec3 view_pos;  // 相机坐标
+
+struct Material {
+  vec3 ambient;
+  vec3 diffuse;
+  vec3 specular;
+  float shininess;
+};
+uniform Material material;
 
 void main() {
   // 环境光
-  float ambient_strength = 0.1;
-  vec3 ambient = ambient_strength * vec3(1, 1, 1);
+  vec3 amb = light * material.ambient;
 
   // 漫反射
   vec3 norm = normalize(f_normal);
   vec3 light_dir = normalize(light_pos - f_pos);
-  vec3 diffuse = cube_color * light_color * max(0, dot(norm, light_dir));
+  vec3 diff = light * material.diffuse * max(0, dot(norm, light_dir));
 
   // 镜面反射
-  float specular_strength = 0.5;
-  int shininess = 32;
   vec3 reflect_dir = reflect(-light_dir, norm);
   vec3 view_dir = normalize(view_pos - f_pos);
-  vec3 specular = specular_strength * light_color * pow(max(dot(reflect_dir, view_dir), 0), shininess);
+  vec3 spec = light * material.specular * pow(max(dot(reflect_dir, view_dir), 0), material.shininess);
 
-  color = vec4(ambient + diffuse + specular, 1);
+  color = vec4(amb + diff + spec, 1);
 }
 ```
 
@@ -184,15 +193,20 @@ void main() {
 #version 330 core
 out vec4 color;
 
-uniform vec3 light_color;
+uniform vec3 light;
 
-void main() { color = vec4(light_color, 1); }
+void main() { color = vec4(light, 1); }
 ```
 
 ```cpp
 /// main.cpp
-auto light_color = QVector3D{1, 1, 1};
+auto light = QVector3D{1, 1, 1};
 auto cube_color = QVector3D{.5, .5, .5};
+
+auto ambient = QVector3D{.1, .1, .1};
+auto diffuse = QVector3D{1, 1, 1};
+auto specular = QVector3D{1, 1, 1};
+auto shininess = 32;
 
 class GLWindow : public QOpenGLWindow, protected QOpenGLExtraFunctions {
 public:
@@ -277,14 +291,17 @@ public:
 
     // 方块
     cube_shader_.use();
-    cube_shader_.set_uniform("cube_color", cube_color);
-    cube_shader_.set_uniform("light_color", light_color);
+    cube_shader_.set_uniform("light", light);
     auto model = QMatrix4x4{};
     auto projection = QMatrix4x4{};
     projection.perspective(45.f, 1.0f * width() / height(), 0.1f, 100.0f);
     cube_shader_.set_uniform("model", model);
     cube_shader_.set_uniform("view", camera_.view_matrix());
     cube_shader_.set_uniform("projection", projection);
+    cube_shader_.set_uniform("material.ambient", ambient);
+    cube_shader_.set_uniform("material.diffuse", diffuse);
+    cube_shader_.set_uniform("material.specular", specular);
+    cube_shader_.set_uniform("material.shininess", shininess);
     cube_shader_.set_uniform("light_pos", QVector3D{1.2f, 1.0f, 2.0f});
     cube_shader_.set_uniform("view_pos", camera_.position_);
     glBindVertexArray(cube_vao_);
@@ -294,7 +311,7 @@ public:
     light_shader_.use();
     model.translate(1.2f, 1.0f, 2.0f);
     model.scale(0.2f);
-    light_shader_.set_uniform("light_color", light_color);
+    light_shader_.set_uniform("light", light);
     light_shader_.set_uniform("model", model);
     light_shader_.set_uniform("view", camera_.view_matrix());
     light_shader_.set_uniform("projection", projection);
@@ -367,36 +384,4 @@ private:
   float x_offset_ = 0;
   float y_offset_ = 0;
 };
-
-auto main(int argc, char *argv[]) -> int {
-  auto app = QApplication{argc, argv};
-  auto w = GLWindow{};
-  w.show();
-
-  // 光照颜色
-  auto light_color_widget = QWidget{};
-  light_color_widget.setWindowTitle("Light Color");
-  auto lcw_layout = QVBoxLayout{&light_color_widget};
-  auto lcw_rslider = QSlider{Qt::Horizontal};
-  lcw_rslider.setRange(0, 100);
-  lcw_rslider.setValue(100);
-  lcw_layout.addWidget(new QLabel{"Red"});
-  lcw_layout.addWidget(&lcw_rslider);
-  auto lcw_gslider = QSlider{Qt::Horizontal};
-  lcw_gslider.setRange(0, 100);
-  lcw_gslider.setValue(100);
-  lcw_layout.addWidget(new QLabel{"Green"});
-  lcw_layout.addWidget(&lcw_gslider);
-  auto lcw_bslider = QSlider{Qt::Horizontal};
-  lcw_bslider.setRange(0, 100);
-  lcw_bslider.setValue(100);
-  lcw_layout.addWidget(new QLabel{"Blue"});
-  lcw_layout.addWidget(&lcw_bslider);
-  QObject::connect(&lcw_rslider, &QSlider::valueChanged, [](int value) { light_color.setX(value / 100.0f); });
-  QObject::connect(&lcw_gslider, &QSlider::valueChanged, [](int value) { light_color.setY(value / 100.0f); });
-  QObject::connect(&lcw_bslider, &QSlider::valueChanged, [](int value) { light_color.setZ(value / 100.0f); });
-  light_color_widget.show();
-
-  return QApplication::exec();
-}
 ```
