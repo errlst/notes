@@ -2,10 +2,12 @@
   - [createComponent](#createcomponent)
   - [createQmlObject](#createqmlobject)
   - [动态删除对象](#动态删除对象)
-- [JS 资源](#js-资源)
+- [QML 导入 JS 资源](#qml-导入-js-资源)
   - [code-behind](#code-behind)
   - [shared library](#shared-library)
-- [导入 QML](#导入-qml)
+- [JS 导入其他资源](#js-导入其他资源)
+  - [导入 JS](#导入-js)
+  - [导入 QML](#导入-qml)
 
 # 动态创建对象
 
@@ -25,51 +27,59 @@
 
 - parent，指定创建的 `Component` 对象父对象。
 
+<div style="display: flex; gap: 5px">
+
 ```js
-// 点击添加方块
+/// main.qml
+import QtQuick
+import QtQuick.Controls
+
 ApplicationWindow {
+    id: mainwindow
     visible: true
     width: 400
     height: 400
 
-    Button {
-        height: 50
-        anchors.bottom: parent.bottom
-        text: "load"
-        autoRepeat: true
-        onClicked: {
-            if (!component) {
-                // 异步加载
-                component = Qt.createComponent("MyRectangle.qml", Component.Asynchronous);
-                text = "loading";
-                component.onStatusChanged.connect(function () {
-                    // 加载完成
-                    if (component.status == Component.Ready) {
-                        text = "add";
-                    }
-                });
-            }
-            if (component.status == Component.Ready) {
-                // 添加子对象
-                component.createObject(container);
-            }
-        }
-
-        property var component: undefined
-    }
-
-    Rectangle {
+    Flow {
+        id: container
         width: parent.width
-        height: parent.height - 50
-        border.color: "gray"
-        Flow {
-            id: container
-            width: parent.width
-            height: parent.height
-        }
+        height: parent.height
     }
+
+    Component.onCompleted: {
+        console.log("component load");
+        this.component = Qt.createComponent("MyRectangle.qml", Component.Asynchronous);
+        this.component.onStatusChanged.connect(() => {
+            if (this.component.status === Component.Ready) {
+                console.log("component ready");
+                timer.start();
+            }
+        });
+    }
+
+    Timer {
+        id: timer
+        repeat: true
+        interval: 500
+        onTriggered: mainwindow.component.createObject(container)
+    }
+
+    property var component: undefined
 }
 ```
+
+```js
+/// MyRectangle.qml
+import QtQuick
+
+Rectangle {
+    width: 50
+    height: 50
+    color: Qt.rgba(Math.random(), Math.random(), Math.random(), 1)
+}
+```
+
+</div>
 
 ## createQmlObject
 
@@ -86,7 +96,7 @@ ApplicationWindow {
 > 此函数会立即返回，因此如果 QML 字符串中加载了额外的外部组件，可能因为未加载完成而不起作用。
 
 ```js
-// 左侧编辑 QML，右侧渲染结果
+/// 左侧编辑 QML，右侧渲染结果
 import QtQuick
 import QtQuick.Controls
 
@@ -133,7 +143,7 @@ ApplicationWindow {
 
 可以在对象上调用 `.destroy(delay)` 销毁对象，delay 是可选的延迟销毁参数。
 
-# JS 资源
+# QML 导入 JS 资源
 
 JS 代码可以内联在 QML 中，也可以分离到单独的 JS 文件中，称为 JS 资源。QML 支持两种 JS 资源：
 
@@ -225,4 +235,26 @@ function onClicked(button) {
 
 </div>
 
-# 导入 QML
+# JS 导入其他资源
+
+## 导入 JS
+
+有两种方式导入 JS 资源：
+
+- 导入 ECMAScript 模块的标准 ECMAScript 语法：
+
+  ```js
+  import * as MyModule from "mymodule.mjs";
+  ```
+
+- 使用 QML 引擎提供的拓展语法：
+
+  ```js
+  .import "mymodule.js" as MyModule;
+  ```
+
+## 导入 QML
+
+```js
+.import TypeNamespace MajorVersion.MinorVersion as Qualifier
+```
