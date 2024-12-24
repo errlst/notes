@@ -4,9 +4,8 @@
 
 ```c
 struct ngx_cycle_s {
-    // 模块配置文件数组
-    // 每个元素是一个指针，指向一个模块的配置
-    // 获取配置的表达式为：
+    // 模块配置文件数组，使用四级指针的作用是方便解引用
+    // 获取核心模块上下文的表达式为：
     // (ngx_core_conf_t *)ngx_get_conf(conf_ctx, module)
     void ****conf_ctx;
 
@@ -32,9 +31,10 @@ struct ngx_cycle_s {
     ngx_uint_t modules_n;
     ngx_uint_t modules_used; /* unsigned  modules_used:1; */
 
+    // 可复用连接
     ngx_queue_t reusable_connections_queue;
     ngx_uint_t reusable_connections_n;
-    time_t connections_reuse_time;
+    time_t connections_reuse_time;  // 上次复用的时间，可以防止短时间多次复用产生大量日志
 
     ngx_array_t listening; // ngx_listen_t 数组
     ngx_array_t paths; // nginx 需要用到的所有路径
