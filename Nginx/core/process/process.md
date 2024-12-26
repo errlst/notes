@@ -1,10 +1,12 @@
-nginx 有以下几种类型的进程，当前进程的类型保存在 `ngx_process` 变量中：
+```c
+/// os/unix/ngx_process_cycle.h
 
-- `NGX_PROCESS_SINGLE`，单进程模式，通过指令 `master_process off` 设置。单进程的循环函数为 `ngx_single_process_cycle()`。
-
-- `NGX_PROCESS_MASTER`，主进程，主进程的循环函数为 `ngx_master_process_cycle()`。
-
-> `ngx_master_process_cycle()` 中会创建固定数量的工作进程，工作进程数量通过指令 `worker_processes n` 设置（默认为 1），然后阻塞在 `sigsuspend()` 等待信号。
+#define NGX_PROCESS_SINGLE     0
+#define NGX_PROCESS_MASTER     1
+#define NGX_PROCESS_SIGNALLER  2
+#define NGX_PROCESS_WORKER     3
+#define NGX_PROCESS_HELPER     4
+```
 
 # NGX_PROCESS_WORKER
 
@@ -19,9 +21,20 @@ ngx_process_t ngx_processes[NGX_MAX_PROCESSES];
 
 # NGX_PROCESS_SIGNALLER
 
-信号进程，信号进程的作用就是向 nginx 主进程发起信号，通过 `nginx -s signal` 启动。
+信号进程，信号进程的作用就是向 nginx 主进程发起信号，通过 `nginx -s <signal>` 启动。
 
 信号进程的处理程序为 `ngx_signal_process()`。
 
 信号进程通过文件 `logs/nginx.pid` 找到主进程的 pid，然后发送信号。
 
+# NGX_PROCESS_MASTER
+
+主进程。工作函数是 `ngx_master_process_cycle()`。
+
+# NGX_PROCESS_SINGLE
+
+单进程模式，此时由单个进程完成主进程和工作进程的任务。工作函数是 `ngx_single_process_cycle()`。
+
+# NGX_PROCESS_HELPER
+
+辅助进程，负责进行高速缓存管理和高速缓存加载，只有 unix 平台存在此类型的进程，运行时会创建辅助进程。工作函数是 `ngx_cache_manager_process_cycle()`。

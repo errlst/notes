@@ -1,6 +1,7 @@
 全局变量 `signals` 存储所有 nginx 需要处理的信号。
 
 ```c
+/// os/unix/ngx_process.c
 ngx_signal_t signals[] = {
     {ngx_signal_value(NGX_RECONFIGURE_SIGNAL), "SIG" ngx_value(NGX_RECONFIGURE_SIGNAL), "reload", ngx_signal_handler},
     {ngx_signal_value(NGX_REOPEN_SIGNAL), "SIG" ngx_value(NGX_REOPEN_SIGNAL), "reopen", ngx_signal_handler},
@@ -74,3 +75,13 @@ nginx 定义了以下平台无关信号，用于 nginx 特殊使用：
 - 否则，在 new_cycle 上创建新的工作进程，然后向之前的工作进程发送 `NGX_SHUTDOWN_SIGNAL` 信号。
 
 对应变量 `ngx_reconfigure`。
+
+## NGX_CHANGEBIN_SIGNAL
+
+更新 nginx 二进制文件。
+
+主进程重新启动 nginx 二进制文件，并传入所有监听套接字。`ngx_exec_new_binary()`。
+
+对应变量 `ngx_change_binary`。
+
+对于新的二进制文件，如果旧的二进制文件还在运行，则忽略该信号；对于旧的二进制文件，如果新的二进制文件已经运行，则忽略该信号。
