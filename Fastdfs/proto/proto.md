@@ -45,26 +45,54 @@ typedef struct
 
 - ip_addr_and_port_list，每个 ip-port 长度为 `RECORD_LENGTH`。
 
-## 上传文件
+## 常用 api
 
-此协议只在 client <-> storage 有效。
+### upload & upload_appender
+
+upload，上传普通文件，包括主文件。
 
 ```c
 #define STORAGE_PROTO_CMD_UPLOAD_FILE 11
 ```
 
-有两种上传协议格式：
+upload_appender，上传可追加文件，后续可对文件进行 append、modify 和 trunc 操作。
 
-- `| header | filename_len | file_size | filename | data |`。
+```c
+#define STORAGE_PROTO_CMD_UPLOAD_APPENDER_FILE	23
+```
 
-  - filename_len，固定长度 `FDFS_PROTO_PKG_LEN_SIZE`。
+两个 api 的 payload 格式相同：
 
-  - file_size，固定长度 `FDFS_PROTO_PKG_LEN_SIZE`。
+```text
+| store_idx | size | ext | content |
+```
 
-  - filename，固定长度 `FDFS_FILE_PREFIX_MAX_LEN + FDFS_FILE_EXT_NAME_MAX_LEN`。
+- store_index，1 字节，storage 的存储索引，用于负载均衡。
 
-- `| header | storage_idx | file_size | extname | data|`。
+> 该参数对应 storage 配置文件中的 `store_pathn`，从 tracker 获取。
 
-- storage_idx，向 tracker 申请 storage index 的结果，1 字节。
+- size，8 字节，文件大小。
 
-- extname，文件后缀名或全 0。
+- ext，`FDFS_FILE_EXT_NAME_MAX_LEN` 字节，文件后缀（不包括 `.`）。
+
+- content，文件内容。
+
+### upload_slave
+
+从文件基于主文件进行命名，常用于缩略图。
+
+```c
+#define STORAGE_PROTO_CMD_UPLOAD_SLAVE_FILE	21
+```
+
+协议 payload 格式为：
+
+```text
+| master_len | size | prefix | ext | master_name | content |
+```
+
+- master_len，8 字节，主文件名长度。
+
+- prefix，从文件前缀。
+
+- master_name，主文件名。
