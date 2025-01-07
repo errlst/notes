@@ -26,7 +26,6 @@
 
   - stream，流模块。
 
-
 ## 时间
 
 nginx 使用 `ngx_time_t` 结构表示秒、毫秒和 GMT 偏移：
