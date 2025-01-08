@@ -53,228 +53,59 @@ $$
 
 其中 $R$、$U$、$D$ 分别是右向量、上向量和方向向量，$P$ 是相机位置向量。
 
-# 相机类的简单实现
+# 简单相机类
 
 ```cpp
-struct CameraDirection {
-  int front; // 正前负后
-  int right; // 正右负左
-};
+#pragma once
 
-struct Camera {
-public:
-  Camera() { update_vecs(); }
+#include <glm/ext.hpp>
+#include <glm/glm.hpp>
 
-  // 视图矩阵
-  auto view_matrix() -> QMatrix4x4 {
-    auto res = QMatrix4x4{};
-    res.lookAt(position_, position_ + front_, up_);
-    return res;
-  }
+struct camera_t {
+    camera_t() { update(); }
 
-  // 移动
-  auto move(CameraDirection dir, float delta_time) {
-    float distance = speed_ * delta_time;
-    position_ += front_ * dir.front * distance;
-    position_ += right_ * dir.right * distance;
-  }
-
-  // 旋转
-  auto rotate(float x_offset, float y_offset) {
-    x_offset *= sensitivity_;
-    y_offset *= sensitivity_;
-
-    yaw_ += x_offset;
-    pitch_ += y_offset;
-
-    // 约束偏航角，使其在 [-180, 180] 之间
-    if (pitch_ > 89.0f) {
-      pitch_ = 89.0f;
-    }
-    if (pitch_ < -89.0f) {
-      pitch_ = -89.0f;
+    auto view_matrix() -> glm::mat4 {
+        return glm::lookAt(position_, position_ + front_, up_);
     }
 
-    update_vecs();
-  }
-
-  // 缩放
-  auto zoom(float off) {
-    zoom_ -= off;
-    if (zoom_ <= 1.0f) {
-      zoom_ = 1.0f;
-    }
-    if (zoom_ >= 45.0f) {
-      zoom_ = 45.0f;
-    }
-  }
-
-private:
-  // 计算相机的前向量、右向量和上向量
-  auto update_vecs() -> void {
-    front_.setX(cos(qDegreesToRadians(yaw_)) * cos(qDegreesToRadians(pitch_)));
-    front_.setY(sin(qDegreesToRadians(pitch_)));
-    front_.setZ(sin(qDegreesToRadians(yaw_)) * cos(qDegreesToRadians(pitch_)));
-    front_.normalize();
-    right_ = QVector3D::crossProduct(front_, QVector3D(0, 1, 0)).normalized();
-    up_ = QVector3D::crossProduct(right_, front_).normalized();
-  }
-
-public:
-  QVector3D position_{}; // 位置
-  QVector3D front_{};    // 前向量
-  QVector3D up_{};       // 上向量
-  QVector3D right_{};    // 右向量
-
-  float yaw_{-90.0f}; // 偏航角
-  float pitch_{0.0f}; // 俯仰角
-
-  float speed_{2.5f};       // 移动速度
-  float sensitivity_{0.1f}; // 旋转零敏度
-  float zoom_{45.0f};       // 缩放值
-};
-```
-
-# 示例
-
-```cpp
-class GLWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions {
-  public:
-    GLWidget() {
-        auto fmt = QSurfaceFormat{};
-        fmt.setVersion(3, 3);
-        setFormat(fmt);
+    auto move(float front, float right, float delta_time) {
+        float distance = speed_ * delta_time;
+        position_ += front_ * front * distance;
+        position_ += right_ * right * distance;
     }
 
-  public:
-    auto initializeGL() -> void override {
-        initializeOpenGLFunctions();
-        compileShader();
-        glClearColor(1, 1, 1, 1);
-        glUseProgram(program_);
+    auto rotate(float x_offset, float y_offset) {
+        x_offset *= sensitivity_;
+        y_offset *= sensitivity_;
 
-        auto vertics = std::vector<float>{
-            .5,  -.5, 0, 1, 0, 0, // 右下
-            -.5, -.5, 0, 0, 1, 0, // 左下
-            0,   .5f, 0, 0, 0, 1, // 上
-        };
-
-        glGenVertexArrays(1, &vao_);
-        glBindVertexArray(vao_);
-
-        auto vbo = GLuint{};
-        glGenBuffers(1, &vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, vertics.size() * sizeof(float), vertics.data(), GL_STATIC_DRAW);
-
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
+        yaw_ += x_offset;
+        pitch_ = std::max(-89.f, std::min(pitch_ + y_offset, 89.f));
+        update();
     }
 
-    auto paintGL() -> void override {
-        auto model = QMatrix4x4{};
-        model.translate(0, 0, 0);
-        glUniformMatrix4fv(glGetUniformLocation(program_, "model"), 1, GL_FALSE, model.data());
-
-        auto view = QMatrix4x4{};
-        static float f = 0;
-        f += 0.01;
-        auto camera_x = (float)sin(f) * 5.f;
-        auto camera_z = (float)cos(f) * 5.f;
-        view.lookAt({camera_x, 0, camera_z}, {0, 0, 0}, {0, 1, 0});
-        glUniformMatrix4fv(glGetUniformLocation(program_, "view"), 1, GL_FALSE, view.data());
-
-        auto projection = QMatrix4x4{};
-        projection.perspective(45.f, 1. * width() / height(), 0.1f, 100.f);
-        glUniformMatrix4fv(glGetUniformLocation(program_, "projection"), 1, GL_FALSE, projection.data());
-
-        glClear(GL_COLOR_BUFFER_BIT);
-        glBindVertexArray(vao_);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+    auto zoom(float off) {
+        zoom_ = std::max(1.f, std::min(zoom_ - off, 45.f));
     }
 
-    auto resizeGL(int w, int h) -> void override { glViewport(0, 0, w, h); }
-
-  protected:
-    auto compileShader() -> void {
-        bool success;
-
-        auto v_shader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(v_shader, 1, &v_shader_s, nullptr);
-        glCompileShader(v_shader);
-        checkCompile(v_shader);
-
-        auto f_shader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(f_shader, 1, &f_shader_s, nullptr);
-        glCompileShader(f_shader);
-        checkCompile(f_shader);
-
-        program_ = glCreateProgram();
-        glAttachShader(program_, v_shader);
-        glAttachShader(program_, f_shader);
-        glLinkProgram(program_);
-        checkLink(program_);
-
-        glDeleteShader(v_shader);
-        glDeleteShader(f_shader);
+    auto update() -> void {
+        front_.x = glm::cos(glm::radians(yaw_)) * glm::cos(glm::radians(pitch_));
+        front_.y = glm::sin(glm::radians(pitch_));
+        front_.z = glm::sin(glm::radians(yaw_)) * glm::cos(glm::radians(pitch_));
+        front_ = glm::normalize(front_);
+        right_ = glm::normalize(glm::cross(front_, glm::vec3{0, 1, 0}));
+        up_ = glm::normalize(glm::cross(right_, front_));
     }
 
-    auto checkCompile(GLuint shader) -> void {
-        auto suc = 0;
-        char log[1024];
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &suc);
-        if (!suc) {
-            glGetShaderInfoLog(shader, sizeof(log), nullptr, log);
-            std::cout << log << "\n";
-        }
-    }
+    glm::vec3 position_{0, 0, 0}; // 位置
+    glm::vec3 front_{0, 0, -1};   // 前向量
+    glm::vec3 up_{0, 1, 0};       // 上向量
+    glm::vec3 right_{};           // 右向量
 
-    auto checkLink(GLuint pro) -> void {
-        auto suc = 0;
-        char log[1024];
-        glGetProgramiv(pro, GL_LINK_STATUS, &suc);
-        if (!suc) {
-            glGetProgramInfoLog(pro, sizeof(log), nullptr, log);
-            std::cout << log << "\n";
-        }
-    }
+    float yaw_{-90.0f}; // 偏航角
+    float pitch_{0.0f}; // 俯仰角
 
-  private:
-    GLuint vao_;
-    GLuint program_;
-    float x_ = 0;
-    float y_ = 0;
-    float x_v_ = 0;
-    float y_v_ = 0;
-
-  private:
-    inline static auto v_shader_s =
-        R"(#version 330 core
-
-        layout (location=0) in vec3 pos;
-        layout (location=1) in vec3 color;
-
-        out vec3 v_color;
-
-        uniform mat4 model;
-        uniform mat4 view;
-        uniform mat4 projection;
-
-        void main() {
-            gl_Position = projection * view * model * vec4(pos, 1);
-            v_color = color;
-        })";
-
-    inline static auto f_shader_s =
-        R"(#version 330 core
-
-        in vec3 v_color;
-        out vec4 f_color;
-
-        void main() {
-            f_color = vec4(v_color, 1);
-        })";
+    float speed_{2.5f};       // 移动速度
+    float sensitivity_{0.1f}; // 旋转零敏度
+    float zoom_{45.0f};       // 缩放值
 };
 ```

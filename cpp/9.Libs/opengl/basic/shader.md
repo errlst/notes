@@ -1,87 +1,22 @@
-## 着色器对象
+# 着色器对象
 
-```cpp
-auto compileShader() -> void {
-    bool success;
+- `glCreateShader()`：创建 shader 对象。
 
-    auto v_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(v_shader, 1, &v_shader_s, nullptr);
-    glCompileShader(v_shader);
-    checkCompile(v_shader);
+- `glSharedSource()`：绑定 shader 代码。
 
-    auto f_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(f_shader, 1, &f_shader_s, nullptr);
-    glCompileShader(f_shader);
-    checkCompile(f_shader);
-
-    // ...
-}
-
-auto checkCompile(GLuint shader) -> void {
-    auto suc = 0;
-    char log[1024];
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &suc);
-    if (!suc) {
-        glGetShaderInfoLog(shader, sizeof(log), nullptr, log);
-        std::cout << log << "\n";
-    }
-}
-```
-
-- `glCreateShader()`，创建着色器对象。
-
-- `glSharedSource()`，将源码绑定到着色器对象。
-
-- `glCompileShader()`，编译着色器对象。
+- `glCompileShader()`：编译 shader 代码。
 
   > `glCompileShader()` 不会返回编译信息，需要通过 `glGetShaderiv()` 获取着色器参数检查编译是否成功。
-  >
-  > 后缀 iv 表示返回参数是一个整数向量。
 
-## 程序对象
+- `glDeleteShader()`：释放 shader 对象，不影响链接后的程序对象。
+
+# 程序对象
 
 程序对象是将多个着色器链接得到的最终版本。
 
-```cpp
-auto compileShader() -> void {
-    // ...
+- `glCreateProgram()`：创建程序对象。
 
-    program_ = glCreateProgram();
-    glAttachShader(program_, v_shader);
-    glAttachShader(program_, f_shader);
-    glLinkProgram(program_);
-    checkLink(program_);
-
-    glDeleteShader(v_shader);
-    glDeleteShader(f_shader);
-}
-
-auto checkLink(GLuint pro) -> void {
-    auto suc = 0;
-    char log[1024];
-    glGetProgramiv(pro, GL_LINK_STATUS, &suc);
-    if (!suc) {
-        glGetProgramInfoLog(pro, sizeof(log), nullptr, log);
-        std::cout << log << "\n";
-    }
-}
-
-auto paintGL() -> void override {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glOrtho(-10, 10, -10, 10, -1, 1);
-    auto ortho = QMatrix4x4{};
-    ortho.ortho(QRectF{QPointF{-10, 10}, QPointF{10, -10}});
-    auto proj_loc = glGetUniformLocation(program_, "ortho");
-    glUniformMatrix4fv(proj_loc, 1, GL_FALSE, ortho.data());
-    glUseProgram(program_);
-    glBindVertexArray(vao_);
-    glDrawArrays(GL_LINE_LOOP, 0, 40);
-}
-```
-
-- `glCreateProgram()`，创建程序对象。
-
-- `glAttachShader()`，附加着色器。
+- `glAttachShader()`：添加着色器。
 
 - `glLinkProgram()`，链接着色器。
 
@@ -89,7 +24,7 @@ auto paintGL() -> void override {
 
 - `glUseProgram()`，激活程序对象，此后的渲染都会调用该程序对象。
 
-## 顶点着色器
+# 顶点着色器
 
 ```c
 #version 330 core
@@ -109,79 +44,134 @@ void main() {
 # 简单 shader 类
 
 ```cpp
-class Shader {
-public:
-  Shader(QOpenGLExtraFunctions *glfunc) : glfunc_(glfunc) {}
+#pragma once
+#define STB_IMAGE_IMPLEMENTATION
+#include <fstream>
+#include <glad/glad.h>
+#include <glm/glm.hpp>
+#include <iostream>
+#include <stb/stb_image.h>
 
-public:
-  auto init(const char *v_shader_str, const char *f_shader_str) -> void {
-    auto v_shader = glfunc_->glCreateShader(GL_VERTEX_SHADER);
-    glfunc_->glShaderSource(v_shader, 1, &v_shader_str, nullptr);
-    glfunc_->glCompileShader(v_shader);
-    if (!check_compile(v_shader)) {
-      return;
+class shader_t {
+  public:
+    auto init(std::string_view v_shader_path, std::string_view f_shader_path) -> void {
+        auto v_shader = glCreateShader(GL_VERTEX_SHADER);
+        auto v_shader_s = read_file(v_shader_path);
+        auto v_shader_sp = v_shader_s.data();
+        glShaderSource(v_shader, 1, &v_shader_sp, nullptr);
+        glCompileShader(v_shader);
+        check_compile(v_shader);
+
+        auto f_shader = glad_glCreateShader(GL_FRAGMENT_SHADER);
+        auto f_shader_s = read_file(f_shader_path);
+        auto f_shader_sp = f_shader_s.data();
+        glShaderSource(f_shader, 1, &f_shader_sp, nullptr);
+        glCompileShader(f_shader);
+        check_compile(f_shader);
+
+        pro_ = glCreateProgram();
+        glAttachShader(pro_, v_shader);
+        glAttachShader(pro_, f_shader);
+        glLinkProgram(pro_);
+        check_link();
+
+        glDeleteShader(v_shader);
+        glDeleteShader(f_shader);
     }
 
-    auto f_shader = glfunc_->glCreateShader(GL_FRAGMENT_SHADER);
-    glfunc_->glShaderSource(f_shader, 1, &f_shader_str, nullptr);
-    glfunc_->glCompileShader(f_shader);
-    if (!check_compile(f_shader)) {
-      return;
+    auto set_uniform(std::string_view name, glm::vec3 vec) -> void {
+        glUniform3f(get_loc(name), vec.x, vec.y, vec.z);
     }
 
-    program_ = glfunc_->glCreateProgram();
-
-    glfunc_->glAttachShader(program_, v_shader);
-    glfunc_->glAttachShader(program_, f_shader);
-    glfunc_->glLinkProgram(program_);
-    check_link();
-
-    glfunc_->glDeleteShader(v_shader);
-    glfunc_->glDeleteShader(f_shader);
-  }
-
-  auto set_uniform(const std::string &name, const QMatrix4x4 &mat) -> void {
-    glfunc_->glUniformMatrix4fv(get_loc(name), 1, GL_FALSE, mat.data());
-  }
-
-  auto set_uniform(const std::string &name, const QVector3D &vec) -> void {
-    glfunc_->glUniform3f(get_loc(name), vec.x(), vec.y(), vec.z());
-  }
-
-  auto use() -> void { glfunc_->glUseProgram(program_); }
-
-private:
-  auto check_compile(GLuint shader) -> bool {
-    auto suc = 0;
-    char log[1024];
-    glfunc_->glGetShaderiv(shader, GL_COMPILE_STATUS, &suc);
-    if (!suc) {
-      glfunc_->glGetShaderInfoLog(shader, sizeof(log), nullptr, log);
-      std::println("{}", log);
+    auto set_uniform(std::string_view name, glm::mat4 mat) -> void {
+        glUniformMatrix4fv(get_loc(name), 1, GL_FALSE, &mat[0][0]);
     }
-    return suc;
-  }
 
-  auto check_link() -> void {
-    auto suc = 0;
-    char log[1024];
-    glfunc_->glGetProgramiv(program_, GL_LINK_STATUS, &suc);
-    if (!suc) {
-      glfunc_->glGetProgramInfoLog(program_, sizeof(log), nullptr, log);
-      std::println("{}", log);
+    auto set_uniform(std::string_view name, float v) -> void {
+        glUniform1f(get_loc(name), v);
     }
-  }
 
-  auto get_loc(const std::string &name) -> GLuint {
-    auto loc = glfunc_->glGetUniformLocation(program_, name.data());
-    if (-1 == loc) {
-      std::println("uniform {} not found", name);
+    auto set_uniform(std::string_view name, int v) -> void {
+        glUniform1i(get_loc(name), v);
     }
-    return loc;
-  }
 
-private:
-  GLuint program_;
-  QOpenGLExtraFunctions *glfunc_;
+    auto use() -> void { glUseProgram(pro_); }
+
+    static auto load_texture(std::string_view path) -> GLuint {
+        GLuint tex_id;
+        glGenTextures(1, &tex_id);
+
+        int width, height, nr;
+        auto data = stbi_load(path.data(), &width, &height, &nr, 0);
+        if (data) {
+            GLenum fmt;
+            if (1 == nr) {
+                fmt = GL_RED;
+            } else if (3 == nr) {
+                fmt = GL_RGB;
+            } else if (4 == nr) {
+                fmt = GL_RGBA;
+            }
+
+            glBindTexture(GL_TEXTURE_2D, tex_id);
+            glTexImage2D(GL_TEXTURE_2D, 0, fmt, width, height, 0, fmt, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_LINEAR);
+            stbi_image_free(data);
+        } else {
+            std::cerr << "load texture failed " << path;
+            exit(-1);
+        }
+        return tex_id;
+    }
+
+  private:
+    auto read_file(std::string_view path) -> std::string {
+        auto ifs = std::ifstream{path.data()};
+        if (!ifs.is_open()) {
+            std::cerr << "open failed " << path << "\n";
+            exit(-1);
+        }
+        return {std::istreambuf_iterator<char>{ifs}, {}};
+    }
+
+    auto check_compile(GLuint shader) -> bool {
+        auto suc = 0;
+        char log[1024];
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &suc);
+        if (!suc) {
+            glGetShaderInfoLog(shader, sizeof(log), nullptr, log);
+            std::cerr << "compile shader failed " << log << "\n";
+            exit(-1);
+        }
+        return suc;
+    }
+
+    auto check_link() -> void {
+        auto suc = 0;
+        char log[1024];
+        glGetProgramiv(pro_, GL_LINK_STATUS, &suc);
+        if (!suc) {
+            glGetProgramInfoLog(pro_, sizeof(log), nullptr, log);
+            std::cerr << "link shader failed " << log << "\n";
+            exit(-1);
+        }
+    }
+
+    auto get_loc(std::string_view name) -> GLuint {
+        auto loc = glGetUniformLocation(pro_, name.data());
+        if (-1 == loc) {
+            std::cerr << "not find uniform " << name << "\n";
+            exit(-1);
+        }
+        return loc;
+    }
+
+  private:
+    GLuint pro_;
 };
 ```
