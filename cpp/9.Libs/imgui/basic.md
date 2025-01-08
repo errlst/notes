@@ -76,7 +76,7 @@ struct ImDrawList
   >
   > - VtxOffset：VtxBuffer 中的起始偏移。
   >
-  > - VtxOffset：IdxBuffer 中的起始偏移。开启 `ImGuiBackendFlags_RendererHasVtxOffset` 标志后，会使用顶点数据。
+  > - IdxOffset：IdxBuffer 中的起始偏移。如果渲染后端启用 `ImGuiBackendFlags_RendererHasVtxOffset` 标志，会使用索引数据。
   >
   > - ElemCount：索引数量，3 的倍数。
   >
