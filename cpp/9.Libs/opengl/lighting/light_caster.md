@@ -7,47 +7,19 @@
 平行光和点光源的主要区别是：平行光直接设置光源方向，点光源需要根据光源位置和表面位置计算光源方向。
 
 ```glsl
-#version 330 core
-out vec4 frag_color;
-
-struct material_t {
-    sampler2D diffuse;
-    sampler2D specular;
-    float shininess;
-};
-
-struct light_t {
-    // vec3 position;
+struct parallel_light_t {
     vec3 direction;
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
 };
 
-in vec3 frag_pos;
-in vec3 frag_normal;
-in vec2 frag_tex_coord;
-
-uniform vec3 view_pos;
-uniform material_t material;
-uniform light_t light;
-
-void main() {
-    vec3 ambient = light.ambient * vec3(texture(material.diffuse, frag_tex_coord));
-
-    vec3 norm = normalize(frag_normal);
-    // vec3 light_dir = normalize(light.position - frag_pos);
+vec3 calc_parallel_light(parallel_light_t light, vec3 norm, vec3 view_dir) {
     vec3 light_dir = normalize(-light.direction);
-    float diff = max(dot(norm, light_dir), 0.0);
-    vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, frag_tex_coord));
-
-    vec3 viewDir = normalize(view_pos - frag_pos);
-    vec3 reflect_dir = reflect(-light_dir, norm);
-    float spec = pow(max(dot(viewDir, reflect_dir), 0.0), material.shininess);
-    vec3 specular = light.specular * spec * vec3(texture(material.specular, frag_tex_coord));
-
-    vec3 result = ambient + diffuse + specular;
-    frag_color = vec4(result, 1.0);
+    vec3 ambient = light.ambient * vec3(texture(material.diffuse, frag_tex_coord));
+    vec3 diffuse = light.diffuse * vec3(texture(material.diffuse, frag_tex_coord)) * max(dot(norm, light_dir), 0);
+    vec3 specular = light.specular * vec3(texture(material.specular, frag_tex_coord)) * pow(max(dot(view_dir, reflect(-light_dir, norm)), 0), material.shininess);
+    return (ambient + diffuse + specular);
 }
 ```
 
@@ -59,22 +31,54 @@ $$
 F_{att} = \frac{1}{K_c + K_l*d + K_q*d^2}
 $$
 
-- $K_c$、$K_l$、$K_q$ 是三个常数项，是一些经验值+适当调整。
+- $K_c$、$K_l$、$K_q$ 是三个常数项，通常 $K_c$ 选为 1。
 
-- $d$ 是点光源距离表面的距离。
+- $d$ 是光源和片段的距离。
 
 ```glsl
-#version 330 core
-out vec4 frag_color;
-
-struct material_t {
-    sampler2D diffuse;
-    sampler2D specular;
-    float shininess;
+struct point_light_t {
+    vec3 position;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float k_constant;
+    float k_linear;
+    float k_quadratic;
 };
 
-struct light_t {
+vec3 calc_point_light(point_light_t light, vec3 norm, vec3 view_dir) {
+    vec3 light_dir = normalize(light.position - frag_pos);
+    vec3 ambient = light.ambient * vec3(texture(material.diffuse, frag_tex_coord));
+    vec3 diffuse = light.diffuse * vec3(texture(material.diffuse, frag_tex_coord)) * max(dot(norm, light_dir), 0);
+    vec3 specular = light.specular * vec3(texture(material.specular, frag_tex_coord)) * pow(max(dot(view_dir, reflect(-light_dir, norm)), 0), material.shininess);
+
+    float d = length(light.position - frag_pos);
+    float attenuation = 1.0 / (light.k_constant + light.k_linear * d + light.k_quadratic * pow(d, 2));
+    return ambient + (diffuse + specular) * attenuation;
+}
+```
+
+# 聚光
+
+聚光是朝向特定方向的点光源，如手电筒。
+
+聚光相对点光源通常需要额外两个属性：
+
+- 聚光中心方向。
+
+- 聚光半径的切光角（落在该角度内的片段才会被照亮）。
+
+## 软化边缘
+
+给聚光添加简单边缘平滑的方式可以使用内外两个聚光圆锥，当片段处于内外圆锥之间，给出 0~1 的光照强度。
+
+```glsl
+struct spot_light_t {
     vec3 position;
+    vec3 direction;
+    float inner_cut;
+    float outer_cut;
+
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
@@ -84,30 +88,22 @@ struct light_t {
     float k_quadratic;
 };
 
-in vec3 frag_pos;
-in vec3 frag_normal;
-in vec2 frag_tex_coord;
-
-uniform vec3 view_pos;
-uniform material_t material;
-uniform light_t light;
-
-void main() {
-    vec3 ambient = light.ambient * vec3(texture(material.diffuse, frag_tex_coord));
-
-    vec3 norm = normalize(frag_normal);
+vec3 calc_spot_light(spot_light_t light, vec3 norm, vec3 view_dir) {
     vec3 light_dir = normalize(light.position - frag_pos);
-    float diff = max(dot(norm, light_dir), 0.0);
-    vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, frag_tex_coord));
+    float theta = dot(light_dir, normalize(-light.direction));
+    if (theta < light.outer_cut) {
+        return vec3(0);
+    }
+    float intensity = clamp((theta - light.outer_cut) / (light.inner_cut - light.outer_cut), 0, 1);
 
-    vec3 viewDir = normalize(view_pos - frag_pos);
-    vec3 reflect_dir = reflect(-light_dir, norm);
-    float spec = pow(max(dot(viewDir, reflect_dir), 0.0), material.shininess);
-    vec3 specular = light.specular * spec * vec3(texture(material.specular, frag_tex_coord));
+    vec3 ambient = light.ambient * vec3(texture(material.diffuse, frag_tex_coord));
+    vec3 diffuse = light.diffuse * vec3(texture(material.diffuse, frag_tex_coord)) * max(dot(norm, light_dir), 0);
+    vec3 specular = light.specular * vec3(texture(material.specular, frag_tex_coord)) * pow(max(dot(view_dir, reflect(-light_dir, norm)), 0), material.shininess);
 
-    float distance = length(light.position - frag_pos);
-    float attenuation = 1.0 / (light.k_constant + light.k_linear * distance + light.k_quadratic * (distance * distance));
-
-    frag_color = vec4((ambient + diffuse + specular) * attenuation, 1.0);
+    float d = length(light.position - frag_pos);
+    float attenuation = 1.0 / (light.k_constant + light.k_linear * d + light.k_quadratic * pow(d, 2));
+    return (ambient + (diffuse + specular) * intensity) * attenuation;
 }
 ```
+
+> 角度计算为 cos 值，且在角度 0~180° 内，因此越小表示角度越大。
