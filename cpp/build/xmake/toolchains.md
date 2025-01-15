@@ -13,3 +13,15 @@ target("llvm-cc")
     set_languages("c++26")
     set_toolchains("llvm@llvm-18")
 ```
+
+使用 llvm 工具链时，如果需要使用 libc++，除了添加 `-stdlib=libc++`，还需要添加链接选项 `-lc++`。
+
+```lua
+target("llvm-cc")
+    set_kind("binary")
+    add_files("src/*.cpp")
+    add_cxflags("-stdlib=libc++")
+    add_ldflags("-lc++")
+    set_languages("c++26")
+    set_toolchains("clang-20")
+```
