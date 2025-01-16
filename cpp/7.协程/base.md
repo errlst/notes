@@ -8,7 +8,7 @@
 
 - coroutine handle：在协程外部进行操作，用于恢复协程执行或销毁协程。
 
-  > coroutine handle 不具有协程的所有权。
+  > coroutine handle 不具有协程的所有权，只负责指向一个具体的协程对象并操作。
 
 - coroutine state：协程内部动态分配的存储器对象，存储：
 
@@ -103,7 +103,7 @@
 
 3. 调用 `operator delete` 释放 coroutine state。
 
-4. 执行权转移到 caller 或 resumer。
+4. 执行权转移到 caller/resumer。
 
 # co_await
 
@@ -117,22 +117,75 @@
 
 表达式的执行为：
 
-1. 将 expr 转换为一个 awaitable 对象：
+1. 将 expr 转换为 awaitable：
 
-- 如果 expr 被 initial suspend、final suspend 或 yield expr 创建，那 awaitable 就是 expr。
+   - 如果 expr 被 `initial_suspend()`、`final_suspend()` 或 `yield expr` 创建，那 awaitable 就是 expr。
 
-- 如果表达式 `promise.await_transform(expr)` 良构，则 awaitable 是该表达式。
+   - 如果表达式 `promise.await_transform(expr)` 良构，则 awaitable 是该表达式。
 
-- 否则，awaitable 就是 expr。
+   - 否则，awaitable 就是 expr。
 
-2. 然后获取 awaiter 对象：
+2. 获取 awaiter：
 
-- 如果重载决策可以给出最佳决策，那么 awaiter 是 `awaitable.operator co_await()` 或者 `operator co_await(static_cast<awaitable_t&&>(awaitable))` 的结果。
+   - 如果重载决策可以给出最佳决策，那么 awaiter 是 `awaitable.operator co_await()` 或者 `operator co_await(static_cast<awaitable_t&&>(awaitable))` 的结果。
 
-- 如果不存在 operator await，那么 awaiter 就是 awaitable。
+   - 如果不存在 operator await，那么 awaiter 就是 awaitable。
 
-- 否则，ill-formed。
+   - 否则，ill-formed。
 
-3. 调用 `awaiter.await_ready()`，如果结果可转换为 `false`，则协程被挂起，且：
+3. 调用 `awaiter.await_ready()`，如果结果可转换为 `false`，则协程被挂起，调用 `awaiter.await_suspend(handle)`。
+
+   > handle 是当前协程句柄。
+
+   - 如果返回 `void` 或 `true`，控制权立即转移到 caller/resumer。
+
+   - 如果返回 `false`，恢复当前协程。
+
+   - 如果返回其他协程句柄，则恢复其他协程。
+
+     > 通过调用 `handle.resume()`。
+
+   - 如果抛出异常，则捕获异常，恢复协程，并重新抛出异常。
+
+     ```cpp
+     struct promise_t;
+
+     struct task_t : public std::coroutine_handle<promise_t> {
+        using promise_type = ::promise_t;
+     };
+
+     struct promise_t {
+        promise_t(int &i) { i = 1; }
+
+        auto get_return_object() -> task_t { return {task_t::from_promise(*this)}; }
+        auto initial_suspend() noexcept -> std::suspend_never { return {}; }
+        auto final_suspend() noexcept -> std::suspend_never { return {}; }
+        auto return_void() -> void {}
+        auto unhandled_exception() -> void {}
+     };
+
+     struct await_excception_t : std::suspend_always {
+        auto await_suspend(std::coroutine_handle<>) -> void {
+           throw 0;
+        }
+     };
+
+     auto foo(int i = 0) -> task_t {
+        try {
+           co_await await_excception_t{};
+        } catch (...) {
+           std::println("catch exception");
+        }
+     }
+
+     auto main() -> int {
+        foo();
+        return 0;
+     }
+     ```
 
 4. 调用 `awaiter.await_resume()`，且结果为 co_await 表达式的结果。
+
+# co_yield
+
+`co_yield expr` 等价于 `co_await promise.yield_value(expr)`。
