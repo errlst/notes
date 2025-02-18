@@ -1,10 +1,12 @@
-使用[consteval]()指定[立即函数]()，函数调用必须生成编译期常量。[consteval]()声明隐式蕴含[inline]()。
+# 立即函数
 
-[consteval]()不能声明『析构函数』、『分配函数』和『释放函数』。
+使用 `consteval` 声明的函数，函数调用必须生成编译期常量。
 
-#### if consteval
+> 弱化了 `constepxr`，使用 `consteval` 替代。
 
-`if consteval { do_a } else { ao_b }` 如果当前处于常量求值，执行 _do_a_，否则，执行 _do_b_。
+# if consteval
+
+C++23 引入，基本语法为 `if consteval { }`，C++20 的等价代码为 `if(std::is_const_evaluated()) { }`。
 
 ```cpp
 consteval auto const_evaluate(int n) -> int { return n; }
@@ -26,4 +28,3 @@ auto main() -> int {
     return 0;
 }
 ```
-
