@@ -1,4 +1,4 @@
-## async operation
+# async operation
 
 ```mermaid
 graph TD
@@ -18,7 +18,7 @@ ao -- call on completion --> ch
 
   > 该特性允许在 completion handler 中进行异步操作链，而无需担心无效资源占用。
 
-## async agent
+# async agent
 
 async agent 是异步操作的顺序组合，每个异步操作都视为 async agent 的一部分运行，async agent 中的异步操作是同步进行的。
 
@@ -26,7 +26,7 @@ async agent 是异步操作的顺序组合，每个异步操作都视为 async a
 
 ![alt text](image.png)
 
-## associated characteristics
+# associated characteristics
 
 - executor，决定 completion handler 如何排队并执行。
 
@@ -34,7 +34,7 @@ async agent 是异步操作的顺序组合，每个异步操作都视为 async a
 
 - cancellation slot，决定异步操作如何支持取消操作。
 
-## completion token
+# completion token
 
 ![alt text](image-1.png)
 
@@ -50,7 +50,7 @@ asio 通过 completion token 支持异步操作的多重组合机制，按照惯
 
 completion token 作为 completion handler 的原型，如果 token 为函数对象，则 token 已经满足 handler 的要求。
 
-### async_initiate
+## async_initiate
 
 asio 通过 `async_initiate()` 处理不同的 token，主要有两类：
 
@@ -101,7 +101,7 @@ async_initiate(Initiation &&initiation, type_identity_t<CompletionToken> &token,
 }
 ```
 
-## 实现一个 timeout token
+# 实现一个 timeout token
 
 ```cpp
 #include <asio.hpp>
