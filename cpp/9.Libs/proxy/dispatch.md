@@ -131,3 +131,13 @@ auto main() -> int {
   return 0;
 }
 ```
+
+## conversion_dispatch
+
+显示类型转换和隐式类型转换。
+
+```cpp
+class explicit_conversion_dispatch;
+
+class implicit_conversion_dispatch;
+```
