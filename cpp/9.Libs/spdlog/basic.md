@@ -24,21 +24,13 @@ registry o-- logger
 logger o-- sink
 ```
 
----
-
 `spdlog` 中定义了一些自由函数，通过这些函数可以直接操作默认 logger。
 
----
-
 `registry` 是 spdlog 的全局管理器，将 logger 注册到 registry 中，管理所有 logger 的属性。且 registry 内置一个默认的 logger。
-
----
 
 `logger` 是 sink 的管理器，将 sink 绑定到 logger 上，通过 logger 统一调用日志写入。
 
 `logger` 是同步的方式进行日志记录的，可以使用 `async_logger` 进行异步日志记录。
-
----
 
 `sink` 是执行日志消息写入的对象，spdlog 预定义了多种 sink，常用的有：
 

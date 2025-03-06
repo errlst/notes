@@ -38,7 +38,7 @@ auto main() -> int {
 
 </div>
 
-## pattern_formatter
+## pattern
 
 单个 pattern 的格式为 `%((-=)(number))(!)(flag)`。
 
