@@ -10,9 +10,10 @@ class zip_view : public view_interface<zip_view<_Views...>>;
 
 `zip_view` 接受一个或多个视图，产生的新的视图的第 i 个元素由视图的第 i 个元素组成的元组，生成的视图的大小是所有视图的最小大小。
 
-<div class="example_block">
+<div class="code_block">
 
-<div class="example_block_code">
+<div class=>
+示例：
 
 ```cpp
 auto main() -> int {
@@ -29,7 +30,8 @@ auto main() -> int {
 
 </div>
 
-<div class="example_block_output">
+<div>
+输出：
 
 ```shell
 1 壹

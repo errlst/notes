@@ -1,6 +1,12 @@
-QML 使用类似 JS 表达式进行界面开发。
+<link href="../../../../style.css", rel="stylesheet">
 
-```qml
+QML 使用 JS 表达式进行界面开发。通过 Cpp 加载 QML 代码，并渲染。
+
+<div class="code_block">
+<div>
+qml/main.qml
+
+```js
 import QtQuick
 import QtQuick.Controls
 
@@ -11,20 +17,23 @@ ApplicationWindow {
 
     Button {
         id: button
-        text: "a simple btn"
+        text: "a simple button"
         background: Rectangle {
             implicitWidth: 100
-            implicitHeight: 40
-            color: button.down ? '#d6d6d6' : '#f6f6f6'
-            border.color: '#26282a'
+            implicitHeight: 50
+            color: button.down ? '#0096fa' : '#96fafa'
+            border.color: button.down ? '#96fafa' : '#0096fa'
             border.width: 1
             radius: 4
         }
     }
 }
+
 ```
 
-通过 Cpp 加载 QML 代码，并渲染。
+</div>
+<div>
+main.cpp
 
 ```cpp
 #include <QGuiApplication>
@@ -32,30 +41,46 @@ ApplicationWindow {
 
 auto main(int argc, char *argv[]) -> int {
   auto app = QGuiApplication{argc, argv};
-  auto engine = QQmlApplicationEngine{};
-  engine.load(QUrl::fromLocalFile("../main.qml"));
+
+  auto e = QQmlApplicationEngine{};
+  e.load(QUrl::fromLocalFile("./qml/main.qml"));
+
   return QGuiApplication::exec();
 }
 ```
 
-```cmake
-cmake_minimum_required(VERSION 3.20)
+</div>
+<div>
+xmake.lua
 
-project(quick_demo)
+```lua
+add_rules("mode.debug", "mode.release")
 
-set(CMAKE_CXX_STANDARD 17)
+target("qml_demo")
+    set_kind("binary")
+    add_files("src/*.cpp")
 
-add_executable(exec main.cc)
+    add_includedirs("/home/jsr/Qt/6.8.1/gcc_64/include")
+    add_includedirs("/home/jsr/Qt/6.8.1/gcc_64/include/QtGui")
+    add_includedirs("/home/jsr/Qt/6.8.1/gcc_64/include/QtQml")
+    add_linkdirs("/home/jsr/Qt/6.8.1/gcc_64/lib")
+    add_links("Qt6Core", "Qt6Gui", "Qt6Qml")
 
-set(CMAKE_PREFIX_PATH "/home/jsr/Qt/6.8.1/gcc_64/lib/cmake")
+    after_build(function (target)
+        local qml_src_dir = "src/qml"
+        local qml_dst_dir = path.join(target:targetdir(), "qml")
 
-find_package(Qt6 REQUIRED COMPONENTS Core Quick QuickControls2)
+        os.mkdir(qml_dst_dir)
+        os.cp(path.join(qml_src_dir, "/*.qml"), qml_dst_dir)
+    end)
 
-target_link_libraries(exec PRIVATE Qt6::Core Qt6::Quick Qt6::QuickControls2)
-
+    add_runenvs("LD_LIBRARY_PATH", "/home/jsr/Qt/6.8.1/gcc_64/lib")
 ```
 
-# 模块
+</div>
+</div>
+
+## 模块
 
 使用 `import module_name version` 导入模块。从 Qt6.2 开始，导入模块时可以不指定版本，自动选择最新版本。
 
@@ -85,7 +110,7 @@ Qt 提供以下标准模块：
 
 - QtLocation。地图和位置服务。
 
-# 工具
+## 工具
 
 qmllint，验证 QML 文件语法的有效性。
 

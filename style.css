@@ -1,16 +1,8 @@
-.example_block {
+.code_block {
   display: inline-flex;
   gap: 10px;
   border: 1px solid gray;
   border-radius: 8px;
   padding: 10px;
   margin-bottom: 15px;
-}
-
-.example_block_code::before {
-  content: "示例";
-}
-
-.example_block_output::before {
-  content: "输出";
 }
