@@ -60,11 +60,11 @@ target("qml_demo")
     set_kind("binary")
     add_files("src/*.cpp")
 
-    add_includedirs("/home/jsr/Qt/6.8.1/gcc_64/include")
-    add_includedirs("/home/jsr/Qt/6.8.1/gcc_64/include/QtGui")
-    add_includedirs("/home/jsr/Qt/6.8.1/gcc_64/include/QtQml")
-    add_linkdirs("/home/jsr/Qt/6.8.1/gcc_64/lib")
-    add_links("Qt6Core", "Qt6Gui", "Qt6Qml")
+    add_includedirs("/home/errlst/Qt/6.8.2/gcc_64/include")
+    add_includedirs("/home/errlst/Qt/6.8.2/gcc_64/include/QtQml")
+    add_includedirs("/home/errlst/Qt/6.8.2/gcc_64/include/QtWidgets")
+    add_linkdirs("/home/errlst/Qt/6.8.2/gcc_64/lib")
+    add_links("Qt6Core", "Qt6Widgets", "Qt6Qml")
 
     after_build(function (target)
         local qml_src_dir = "src/qml"
@@ -74,7 +74,11 @@ target("qml_demo")
         os.cp(path.join(qml_src_dir, "/*.qml"), qml_dst_dir)
     end)
 
-    add_runenvs("LD_LIBRARY_PATH", "/home/jsr/Qt/6.8.1/gcc_64/lib")
+    add_runenvs("LD_LIBRARY_PATH", "/home/errlst/Qt/6.8.2/gcc_64/lib")
+
+    -- 远程桌面启动 QML 程序时，如果无法正常渲染，可以尝试如下环境变量
+    add_runenvs("LIBGL_ALWAYS_SOFTWARE", "1")
+    add_runenvs("GALLIUM_DRIVER", "llvmpipe")
 ```
 
 </div>

@@ -103,7 +103,7 @@ Item {
 <div>
 输出：
 
-![](image.png)
+![alt text](../../../../Image/Cpp/9.Libs/Qt/QML/Item_1742482382309.png)
 
 </div>
 </div>
@@ -114,7 +114,7 @@ Item {
 
 <div class="code_block">
 <div>
-qml
+代码：
 
 ```qml
 Item {
@@ -152,9 +152,9 @@ Item {
 </div>
 
 <div>
-out.png
+输出：
 
-![](out.png)
+![alt text](../../../../Image/Cpp/9.Libs/Qt/QML/Item_1742482357799.png)
 
 </div>
 </div>
