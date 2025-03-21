@@ -1,6 +1,8 @@
 <link href="../../../../style.css", rel="stylesheet">
 
-QML 使用 JS 表达式进行界面开发。通过 Cpp 加载 QML 代码，并渲染。
+Qt Qml 模块提供 QML 语言的核心运行时支持，包括 QML 引擎、类型系统、数据绑定、JS 集成等底层功能。
+
+Qt Quick 模块是基于 QML 的图形界面框架，依赖于 Qt Qml 模块的底层支持，专注于 UI 渲染和交互。
 
 <div class="code_block">
 <div>
